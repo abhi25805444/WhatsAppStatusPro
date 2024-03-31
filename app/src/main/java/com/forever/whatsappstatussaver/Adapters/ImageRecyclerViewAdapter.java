@@ -12,11 +12,14 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.RecyclerView;
 
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.forever.whatsappstatussaver.MainActivity;
 import com.forever.whatsappstatussaver.R;
 import com.forever.whatsappstatussaver.ViewImages;
@@ -28,10 +31,10 @@ import java.util.ArrayList;
 public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
     Context context;
     boolean isVideoimage;
-    ArrayList<File> arrayList;
+    ArrayList<DocumentFile> arrayList;
     FragmentTransaction fragmentTransaction;
 
-    public ImageRecyclerViewAdapter(Context context, ArrayList<File> arrayList, boolean isVideoimage, androidx.fragment.app.FragmentTransaction fragmentTransaction, Activity activity) {
+    public ImageRecyclerViewAdapter(Context context, ArrayList<DocumentFile> arrayList, boolean isVideoimage, androidx.fragment.app.FragmentTransaction fragmentTransaction, Activity activity) {
 
         this.isVideoimage = isVideoimage;
         this.context = context;
@@ -49,13 +52,14 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof ImageViewHolder && !isVideoimage) {
-            ((ImageViewHolder) holder).imageView.setImageURI(Uri.fromFile(arrayList.get(holder.getAdapterPosition())));
+            Glide.with(context).load(arrayList.get(holder.getAdapterPosition()).getUri()).into(((ImageViewHolder) holder).imageView);
+
             ((ImageViewHolder) holder).imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
 
                     Intent intent=new Intent(context,ViewImages.class);
-                    intent.putExtra("seletedfile",(arrayList.get(holder.getAdapterPosition())).toString());
+                    intent.putExtra("seletedfile",(arrayList.get(holder.getAdapterPosition())).getUri().toString());
                     intent.putExtra("position",holder.getAdapterPosition());
                     intent.putStringArrayListExtra("arrayofstring",getStringArrayList());
                     context.startActivity(intent);
@@ -104,7 +108,7 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
         ArrayList<String> stringArrayList=new ArrayList<>();
         for (int i=0;i<arrayList.size();i++)
         {
-            stringArrayList.add(arrayList.get(i).toString());
+            stringArrayList.add(arrayList.get(i).getUri().toString());
         }
         return stringArrayList;
     }

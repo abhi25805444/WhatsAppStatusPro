@@ -4,6 +4,7 @@ import static android.service.controls.ControlsProviderService.TAG;
 
 import android.content.Context;
 import android.content.UriPermission;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import androidx.documentfile.provider.DocumentFile;
@@ -15,11 +16,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.forever.whatsappstatussaver.Adapters.ImageRecyclerViewAdapter;
@@ -27,15 +28,12 @@ import com.forever.whatsappstatussaver.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+
 import java.io.FilenameFilter;
-import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.Executors;
+
 
 public class imagelistFragment extends Fragment {
     RecyclerView imageRecyclerView;
@@ -43,51 +41,149 @@ public class imagelistFragment extends Fragment {
     ArrayList<File> arrayofImages = new ArrayList<File>();
     FloatingActionButton btnRefresh;
 
+    ImageRecyclerViewAdapter imageRecyclerViewAdapter;
+    FragmentTransaction fragmentTransaction;
+    ArrayList<DocumentFile> ar = new ArrayList();
+    View view;
+    private ProgressBar progressBar;
+
+    boolean isRefreshClick=false;
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View root=inflater.inflate(R.layout.fragment_imagelist, container, false);
-        View view=root.findViewById(R.id.emptyviewofimage);
-        btnRefresh=root.findViewById(R.id.btn_refresh);
-        sizeofArray=retriveImageFromStorage().size();
 
-        imageRecyclerView=root.findViewById(R.id.imageRecyclerView);
-        imageRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(),2));
-        FragmentTransaction fragmentTransaction=getActivity().getSupportFragmentManager().beginTransaction();
-        ImageRecyclerViewAdapter imageRecyclerViewAdapter=new ImageRecyclerViewAdapter(getActivity(),retriveImageFromStorage(),false,fragmentTransaction,getActivity());
-        imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
+        Log.d(TAG, "onCreateView: inside of imagefrag ");
+
+        View root = inflater.inflate(R.layout.fragment_imagelist, container, false);
 
 
-        if(imageRecyclerViewAdapter.getItemCount()==0)
-        {
-            view.setVisibility(View.VISIBLE);
-        }
-        else {
-            view.setVisibility(View.GONE);
-        }
+
+        view = root.findViewById(R.id.emptyviewofimage);
+        btnRefresh = root.findViewById(R.id.btn_refresh);
+        sizeofArray = ar.size();
+        progressBar=root.findViewById(R.id.progressBar);
+
+
+        imageRecyclerView = root.findViewById(R.id.imageRecyclerView);
+        imageRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
+        fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
+
+        new getStatus().execute();
 
 
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                retriveImageFromStorage();
-                if (sizeofArray!=retriveImageFromStorage().size())
+                if(!isRefreshClick)
                 {
-                    if(imageRecyclerViewAdapter.getItemCount()==0)
-                    {
+                    new refresh().execute();
+                }
+
+              /*  if (sizeofArray != executeNew().size()) {
+                    if (imageRecyclerViewAdapter.getItemCount() == 0) {
                         view.setVisibility(View.VISIBLE);
-                    }
-                    else {
+                    } else {
                         view.setVisibility(View.GONE);
                     }
                     imageRecyclerViewAdapter.notifyDataChanges();
-                }
+                }*/
 
 
             }
         });
         return root;
 
+    }
+
+        private class getStatus extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+
+            ar.clear();
+            ar = executeNew();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            progressBar.setVisibility(View.GONE);
+
+            imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
+            imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
+
+            if (imageRecyclerViewAdapter.getItemCount() == 0) {
+                view.setVisibility(View.VISIBLE);
+            } else {
+                view.setVisibility(View.GONE);
+            }
+
+        }
+    }
+
+    private class refresh extends AsyncTask<Void, Void, Void> {
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            isRefreshClick=true;
+//            progressBar.setVisibility(View.VISIBLE);
+            ar.clear();
+            ar = executeNew();
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+//            progressBar.setVisibility(View.GONE);
+
+            imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
+            imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
+            imageRecyclerViewAdapter.notifyItemRangeChanged(0, ar.size());
+            isRefreshClick=false;
+
+//            if (imageRecyclerViewAdapter.getItemCount() == 0) {
+//                view.setVisibility(View.VISIBLE);
+//            } else {
+//                view.setVisibility(View.GONE);
+//            }
+
+        }
+    }
+
+    private ArrayList<DocumentFile> executeNew() {
+
+        final ArrayList<DocumentFile> imagesList = new ArrayList<>();
+
+        Handler mainHandler = new Handler(Looper.getMainLooper());
+
+        List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
+
+        DocumentFile file = DocumentFile.fromTreeUri(requireActivity(), list.get(0).getUri());
+
+        DocumentFile[] statusFiles = file.listFiles();
+
+        for (DocumentFile documentFile : statusFiles) {
+            if (documentFile != null) {
+                Log.d(TAG, "executeNew: file name " + documentFile.getName());
+                if (isImage(documentFile, getContext())) {
+                    imagesList.add(documentFile);
+                }
+                Log.d(TAG, "executeNew: file name " + documentFile.getName());
+            }
+
+        }
+
+
+        return imagesList;
+    }
+
+    private static boolean isImage(DocumentFile file, Context context) {
+        String mimeType = context.getContentResolver().getType(file.getUri());
+        return mimeType != null && mimeType.startsWith("image/");
     }
 
 
@@ -111,8 +207,7 @@ public class imagelistFragment extends Fragment {
 
             if (mediaFiles != null) {
                 for (File file : mediaFiles) {
-                    if(!arrayofImages.contains(file))
-                    {
+                    if (!arrayofImages.contains(file)) {
                         arrayofImages.add(file);
                     }
 

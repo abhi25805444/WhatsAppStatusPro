@@ -125,7 +125,8 @@ public class ViewVideos extends AppCompatActivity {
                 File destinationFile = new File(picturesDirectory,videoFileName);
 
                 try {
-                    FileInputStream fis = new FileInputStream(file[0]);
+                    Uri uri = Uri.parse(stringArrayList.get(position).toString());
+                    FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
                     FileOutputStream fos = new FileOutputStream(destinationFile);
                     byte[] buffer = new byte[1024];
                     int length;

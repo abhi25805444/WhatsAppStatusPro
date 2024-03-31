@@ -10,8 +10,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.forever.whatsappstatussaver.R;
 import com.forever.whatsappstatussaver.ViewImages;
 import com.forever.whatsappstatussaver.ViewVideos;
@@ -22,17 +24,13 @@ import java.util.ArrayList;
 
 public class VideoRecylerviewAdapter extends RecyclerView.Adapter{
     Context context;
-    ArrayList<File> fileArrayList;
+    ArrayList<DocumentFile> fileArrayList;
     ArrayList<Bitmap> videoThumblist=new ArrayList<>();
-    public VideoRecylerviewAdapter(Context context, ArrayList<File> arrayList)
+    public VideoRecylerviewAdapter(Context context, ArrayList<DocumentFile> arrayList)
     {
         this.context=context;
         this.fileArrayList =arrayList;
-        try {
-            videoThumblist=getAllvideoimagearray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+
     }
 
     @NonNull
@@ -45,12 +43,14 @@ public class VideoRecylerviewAdapter extends RecyclerView.Adapter{
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
 
-        ((videoViewHolder) holder).imageView.setImageBitmap(videoThumblist.get(holder.getAdapterPosition()));
+//        ((videoViewHolder) holder).imageView.setImageBitmap(videoThumblist.get(holder.getAdapterPosition()));
+
+        Glide.with(context).load(fileArrayList.get(holder.getAdapterPosition()).getUri()).into(((videoViewHolder) holder).imageView);
         ((videoViewHolder) holder).imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent=new Intent(context, ViewVideos.class);
-                intent.putExtra("seletedfile",(fileArrayList.get(holder.getAdapterPosition())).toString());
+                intent.putExtra("seletedfile",(fileArrayList.get(holder.getAdapterPosition())).getUri().toString());
                 intent.putStringArrayListExtra("arraylistofvideos",getStringArrayList());
                 intent.putExtra("postionofvideo",holder.getAdapterPosition());
     
@@ -95,7 +95,7 @@ public class VideoRecylerviewAdapter extends RecyclerView.Adapter{
         ArrayList<String> stringArrayList=new ArrayList<>();
         for (int i=0;i<fileArrayList.size();i++)
         {
-            stringArrayList.add(fileArrayList.get(i).toString());
+            stringArrayList.add(fileArrayList.get(i).getUri().toString());
         }
         return stringArrayList;
     }
