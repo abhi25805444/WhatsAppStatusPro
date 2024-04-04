@@ -3,13 +3,16 @@ package com.forever.whatsappstatussaver;
 import static android.content.ContentValues.TAG;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 
@@ -72,6 +75,12 @@ public class ViewImages extends AppCompatActivity {
         if (!picturesDirectory.exists()) {
             picturesDirectory.mkdirs();
         }
+        Drawable icon = btnShare.getDrawable();
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+        btnShare.setImageDrawable(icon);
+        icon = btnDownload.getDrawable();
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+        btnDownload.setImageDrawable(icon);
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -104,7 +113,7 @@ public class ViewImages extends AppCompatActivity {
                 whatsappIntent.setPackage("com.whatsapp");
                 Uri uri = Uri.parse(imgUri[0]);
                 whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "Check out this file!");
+                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
                 startActivity(whatsappIntent);
             }
         });

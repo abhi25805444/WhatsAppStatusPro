@@ -4,9 +4,12 @@ import static android.service.controls.ControlsProviderService.TAG;
 
 import android.content.Context;
 import android.content.UriPermission;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -38,143 +41,134 @@ import java.util.Objects;
 
 public class videolistFragment extends Fragment {
 
- RecyclerView recyclerView;
-
- ArrayList<File>arrayofVideo=new ArrayList<>();
- FloatingActionButton btnRefresh;
- int sizeofArray;
+    RecyclerView recyclerView;
+    ArrayList<File> arrayofVideo = new ArrayList<>();
+    FloatingActionButton btnRefresh;
+    int sizeofArray;
 
     ArrayList<DocumentFile> ar = new ArrayList();
     VideoRecylerviewAdapter videoRecylerviewAdapter;
     View view;
     private ProgressBar progressBar;
 
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View root=inflater.inflate(R.layout.fragment_videolist, container, false);
+        View root = inflater.inflate(R.layout.fragment_videolist, container, false);
 
-
-        view=root.findViewById(R.id.emptyviewofvideo);
-        recyclerView=root.findViewById(R.id.videoRecyclerView);
-        btnRefresh=root.findViewById(R.id.btn_refresh);
-        progressBar=root.findViewById(R.id.progressBar);
-        recyclerView.setLayoutManager(new GridLayoutManager(getActivity(),2));
+        view = root.findViewById(R.id.emptyviewofvideo);
+        recyclerView = root.findViewById(R.id.videoRecyclerView);
+        btnRefresh = root.findViewById(R.id.btn_refresh);
+        progressBar = root.findViewById(R.id.progressBar);
+        recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
+        Drawable icon = btnRefresh.getDrawable();
+        icon.setColorFilter(ContextCompat.getColor(getContext(), R.color.white), PorterDuff.Mode.SRC_IN);
+        btnRefresh.setImageDrawable(icon);
 
         new MyAsyncTask().execute();
 
         btnRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                retriveVideoeFromStorage();
-                if(sizeofArray!=retriveVideoeFromStorage().size())
-                {
-                    if(videoRecylerviewAdapter.getItemCount()==0)
-                    {
-                        view.setVisibility(View.VISIBLE);
-                    }
-                    else {
-                        view.setVisibility(View.GONE);
-                    }
-                    videoRecylerviewAdapter.notifyDataChanges();
-                    sizeofArray=retriveVideoeFromStorage().size();
-                }
+                refreshVideoList();
             }
         });
         return root;
     }
 
     private class MyAsyncTask extends AsyncTask<Void, Void, Void> {
-
         @Override
         protected Void doInBackground(Void... voids) {
             ar.clear();
             ar = executeNew();
+
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             progressBar.setVisibility(View.GONE);
-            videoRecylerviewAdapter=new VideoRecylerviewAdapter(getActivity(),ar);
+            videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
             recyclerView.setAdapter(videoRecylerviewAdapter);
-            sizeofArray=executeNew().size();
-
-            if(videoRecylerviewAdapter.getItemCount()==0)
-            {
-                view.setVisibility(View.VISIBLE);
-            }
-            else {
-                view.setVisibility(View.GONE);
-            }
-
+            sizeofArray = executeNew().size();
+            updateEmptyViewVisibility();
         }
+    }
+
+    private void refreshVideoList() {
+        new AsyncTask<Void, Void, ArrayList<DocumentFile>>() {
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+                progressBar.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            protected ArrayList<DocumentFile> doInBackground(Void... voids) {
+                return executeNew();
+            }
+
+            @Override
+            protected void onPostExecute(ArrayList<DocumentFile> newAr) {
+                super.onPostExecute(newAr);
+                progressBar.setVisibility(View.GONE);
+                if (newAr != null) {
+                    if (!areArrayListsEqual(ar, newAr)) { // Check if the new list is different
+                        ar.clear();
+                        ar.addAll(newAr);
+                        videoRecylerviewAdapter.notifyDataSetChanged();
+                        sizeofArray = ar.size();
+                        updateEmptyViewVisibility();
+                    } else {
+                        Toast.makeText(getActivity(), "List is already up to date", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }
+        }.execute();
+    }
+
+    // Method to compare two ArrayLists for equality
+    private boolean areArrayListsEqual(ArrayList<DocumentFile> list1, ArrayList<DocumentFile> list2) {
+        if (list1.size() != list2.size()) {
+            return false;
+        }
+        for (int i = 0; i < list1.size(); i++) {
+            if (!list1.get(i).equals(list2.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private ArrayList<DocumentFile> executeNew() {
-
-        final ArrayList<DocumentFile> imagesList = new ArrayList<>();
-
+        final ArrayList<DocumentFile> videosList = new ArrayList<>();
         List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
-
         DocumentFile file = DocumentFile.fromTreeUri(requireActivity(), list.get(0).getUri());
-
-
         DocumentFile[] statusFiles = file.listFiles();
-
-
         for (DocumentFile documentFile : statusFiles) {
-
-            if(documentFile!=null)
-            {
-                Log.d(TAG, "executeNew: file name " + documentFile.getName());
-
-                if(isVideo(documentFile,getContext()))
-                {
-                    imagesList.add(documentFile);
-                }
-                Log.d(TAG, "executeNew: file name " + documentFile.getName());
+            if (documentFile != null && isVideo(documentFile, getContext())) {
+                videosList.add(documentFile);
             }
         }
-        return imagesList;
+        return videosList;
     }
 
     private static boolean isVideo(DocumentFile file, Context context) {
-        ; // Replace YourApplication with your application class
         String mimeType = context.getContentResolver().getType(file.getUri());
         return mimeType != null && mimeType.startsWith("video/");
     }
-    private ArrayList<File> retriveVideoeFromStorage() {
-        String directoryPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/media/com.whatsapp/WhatsApp/Media/.Statuses/";
-        Log.d(TAG, "listMediaFiles: " + directoryPath);
-        File directory = new File(directoryPath);
 
-        if (directory.exists() && directory.isDirectory()) {
-            FilenameFilter mediaFilter = new FilenameFilter() {
-                @Override
-                public boolean accept(File dir, String name) {
-                    String lowercaseName = name.toLowerCase();
-                    return lowercaseName.endsWith(".mp4");
-                }
-            };
-
-            File[] mediaFiles = directory.listFiles(mediaFilter);
-
-            if (mediaFiles != null) {
-                for (File file : mediaFiles) {
-                    if(!arrayofVideo.contains(file))
-                    {
-                        arrayofVideo.add(file);
-                    }
-
-                }
-                Log.d(TAG, "listvideoFiles: " + arrayofVideo);
-            }
+    private void updateEmptyViewVisibility() {
+        if (videoRecylerviewAdapter.getItemCount() == 0) {
+            view.setVisibility(View.VISIBLE);
         } else {
-            Toast.makeText(getActivity(), "getting Error To Retrive ", Toast.LENGTH_SHORT).show();
+            view.setVisibility(View.GONE);
         }
-        return arrayofVideo;
     }
 }

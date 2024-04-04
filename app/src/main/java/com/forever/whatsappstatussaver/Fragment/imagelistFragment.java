@@ -4,9 +4,12 @@ import static android.service.controls.ControlsProviderService.TAG;
 
 import android.content.Context;
 import android.content.UriPermission;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 
+import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -64,6 +67,9 @@ public class imagelistFragment extends Fragment {
         btnRefresh = root.findViewById(R.id.btn_refresh);
         sizeofArray = ar.size();
         progressBar=root.findViewById(R.id.progressBar);
+        Drawable icon = btnRefresh.getDrawable();
+        icon.setColorFilter(ContextCompat.getColor(getContext(), R.color.white), PorterDuff.Mode.SRC_IN);
+        btnRefresh.setImageDrawable(icon);
 
 
         imageRecyclerView = root.findViewById(R.id.imageRecyclerView);
@@ -123,37 +129,47 @@ public class imagelistFragment extends Fragment {
 
         }
     }
-
-    private class refresh extends AsyncTask<Void, Void, Void> {
+    private class refresh extends AsyncTask<Void, Void, ArrayList<DocumentFile>> {
 
         @Override
-        protected Void doInBackground(Void... voids) {
-            isRefreshClick=true;
-//            progressBar.setVisibility(View.VISIBLE);
-            ar.clear();
-            ar = executeNew();
-            return null;
+        protected void onPreExecute() {
+            super.onPreExecute();
+            isRefreshClick = true; // Set refresh state to true
+            progressBar.setVisibility(View.VISIBLE); // Show progress bar
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-//            progressBar.setVisibility(View.GONE);
+        protected ArrayList<DocumentFile> doInBackground(Void... voids) {
+            return executeNew(); // Fetch updated data
+        }
 
-            imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
-            imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
-            imageRecyclerViewAdapter.notifyItemRangeChanged(0, ar.size());
-            isRefreshClick=false;
+        @Override
+        protected void onPostExecute(ArrayList<DocumentFile> newAr) {
+            super.onPostExecute(newAr);
+            progressBar.setVisibility(View.GONE); // Hide progress bar
 
-//            if (imageRecyclerViewAdapter.getItemCount() == 0) {
-//                view.setVisibility(View.VISIBLE);
-//            } else {
-//                view.setVisibility(View.GONE);
-//            }
+            if (newAr != null && !areArrayListsEqual(ar, newAr)) { // Check if the new list is different
+                ar.clear(); // Clear existing data
+                ar.addAll(newAr); // Update with new data
+                imageRecyclerViewAdapter.notifyDataSetChanged(); // Notify adapter
+            }
 
+            isRefreshClick = false; // Reset refresh state
         }
     }
 
+    // Method to compare two ArrayLists for equality
+    private boolean areArrayListsEqual(ArrayList<DocumentFile> list1, ArrayList<DocumentFile> list2) {
+        if (list1.size() != list2.size()) {
+            return false;
+        }
+        for (int i = 0; i < list1.size(); i++) {
+            if (!list1.get(i).equals(list2.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
     private ArrayList<DocumentFile> executeNew() {
 
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();

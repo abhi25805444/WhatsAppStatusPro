@@ -2,9 +2,14 @@ package com.forever.whatsappstatussaver;
 
 import static android.content.ContentValues.TAG;
 
+import static java.security.AccessController.getContext;
+
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -54,6 +59,13 @@ public class ViewVideos extends AppCompatActivity {
         imageView=findViewById(R.id.imgconrol);
         btnDownload=findViewById(R.id.btn_download);
         btnShare=findViewById(R.id.btn_share);
+
+        Drawable icon = btnShare.getDrawable();
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+        btnShare.setImageDrawable(icon);
+        icon = btnDownload.getDrawable();
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+        btnDownload.setImageDrawable(icon);
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String videoFileName = "Video_" + timeStamp + "_" + new Random().nextInt(1000) + ".mp4";
         Intent intent=getIntent();
@@ -145,13 +157,15 @@ public class ViewVideos extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                whatsappIntent.setType("video/*");
+                whatsappIntent.setType("image/*");
                 whatsappIntent.setPackage("com.whatsapp");
-                Uri uri = Uri.parse(imgUri);
+
+                Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
                 whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "Check out this file!");
+                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
                 startActivity(whatsappIntent);
             }
         });
     }
+
 }
