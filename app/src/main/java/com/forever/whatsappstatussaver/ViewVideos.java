@@ -16,6 +16,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -37,15 +39,18 @@ import java.util.Random;
 public class ViewVideos extends AppCompatActivity {
     FloatingActionButton btnDownload;
     FloatingActionButton btnShare;
-    ImageView imageView;
-    LinearLayout imgPrev;
-    LinearLayout imgNext;
     int position;
     String imgUri;
+    ArrayList<String> stringArrayList;
+    File[] file;
+    VideoView videoView;
+
+    private GestureDetector gestureDetector;
+    private static final int SWIPE_THRESHOLD = 100;
+    private static final int SWIPE_VELOCITY_THRESHOLD = 100;
 
     @Override
     protected void onPause() {
-        imageView.setImageDrawable(getResources().getDrawable(R.drawable.baseline_play_circle_24));
         super.onPause();
     }
 
@@ -53,12 +58,9 @@ public class ViewVideos extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_videos);
-        VideoView videoView = findViewById(R.id.videoView);
-        imgNext=findViewById(R.id.imgnext1);
-        imgPrev=findViewById(R.id.imgprev1);
-        imageView=findViewById(R.id.imgconrol);
-        btnDownload=findViewById(R.id.btn_download);
-        btnShare=findViewById(R.id.btn_share);
+        videoView = findViewById(R.id.videoView);
+        btnDownload = findViewById(R.id.btn_download);
+        btnShare = findViewById(R.id.btn_share);
 
         Drawable icon = btnShare.getDrawable();
         icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
@@ -68,12 +70,12 @@ public class ViewVideos extends AppCompatActivity {
         btnDownload.setImageDrawable(icon);
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String videoFileName = "Video_" + timeStamp + "_" + new Random().nextInt(1000) + ".mp4";
-        Intent intent=getIntent();
-         imgUri= intent.getStringExtra("seletedfile");
-        position=intent.getIntExtra("postionofvideo",0);
-        ArrayList<String>stringArrayList=intent.getStringArrayListExtra("arraylistofvideos");
+        Intent intent = getIntent();
+        imgUri = intent.getStringExtra("seletedfile");
+        position = intent.getIntExtra("postionofvideo", 0);
+        stringArrayList = intent.getStringArrayListExtra("arraylistofvideos");
         File picturesDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
-        final File[] file = {new File(imgUri)};
+        file = new File[]{new File(imgUri)};
 
 
         videoView.setVideoURI(Uri.parse(imgUri));
@@ -89,52 +91,32 @@ public class ViewVideos extends AppCompatActivity {
         });
         videoView.start();
 
-        imageView.setOnClickListener(new View.OnClickListener() {
+        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
-            public void onClick(View v) {
-                if(videoView.isPlaying())
-                {
-                    imageView.setImageDrawable(getResources().getDrawable(R.drawable.baseline_play_circle_24));
-                    videoView.pause();
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                float diffX = e2.getX() - e1.getX();
+                float diffY = e2.getY() - e1.getY();
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffX > 0) {
+                            onSwipeRight();
+                        } else {
+                            onSwipeLeft();
+                        }
+                        return true;
+                    }
                 }
-                else {
-                    imageView.setImageDrawable(getResources().getDrawable(R.drawable.baseline_pause_circle_24));
-                    videoView.start();
-                }
-            }
-        });
-        imgPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                position--;
-                if(position<0)
-                {
-                    position=stringArrayList.size()-1;
-                }
-                file[0] =new File(stringArrayList.get(position));
-                imgUri=stringArrayList.get(position);
-                videoView.setVideoURI(Uri.parse(stringArrayList.get(position)));
+                return false;
             }
         });
 
-        imgNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                position++;
-                if(position==stringArrayList.size())
-                {
-                    position=0;
-                }
-                file[0] =new File(stringArrayList.get(position));
-                imgUri=stringArrayList.get(position);
-                videoView.setVideoURI(Uri.parse(stringArrayList.get(position)));
-            }
-        });
+
+
 
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                File destinationFile = new File(picturesDirectory,videoFileName);
+                File destinationFile = new File(picturesDirectory, videoFileName);
 
                 try {
                     Uri uri = Uri.parse(stringArrayList.get(position).toString());
@@ -166,6 +148,41 @@ public class ViewVideos extends AppCompatActivity {
                 startActivity(whatsappIntent);
             }
         });
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event);
+    }
+
+
+    public void nextImg() {
+        position++;
+        if (position == stringArrayList.size()) {
+            position = 0;
+        }
+        file[0] = new File(stringArrayList.get(position));
+        imgUri = stringArrayList.get(position);
+        videoView.setVideoURI(Uri.parse(stringArrayList.get(position)));
+    }
+
+    public void prevImg() {
+        position--;
+        if (position < 0) {
+            position = stringArrayList.size() - 1;
+        }
+        file[0] = new File(stringArrayList.get(position));
+        imgUri = stringArrayList.get(position);
+        videoView.setVideoURI(Uri.parse(stringArrayList.get(position)));
+    }
+
+
+    private void onSwipeLeft() {
+        nextImg();
+    }
+
+    private void onSwipeRight() {
+        prevImg();
     }
 
 }

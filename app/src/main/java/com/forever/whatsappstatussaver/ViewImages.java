@@ -20,6 +20,8 @@ import android.os.Bundle;
 import android.os.Environment;
 
 import android.util.Log;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 
 import android.widget.ImageView;
@@ -44,18 +46,22 @@ public class ViewImages extends AppCompatActivity {
     ImageView imageView;
     FloatingActionButton btnDownload;
     FloatingActionButton btnShare;
-    LinearLayout imgNext;
-    LinearLayout imgPrev;
+
     File file1;
     int position;
+    private GestureDetector gestureDetector;
+    private static final int SWIPE_THRESHOLD = 100;
+    private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+    ArrayList<String> arrayList;
+
+    File[] file;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_images);
         btnShare = findViewById(R.id.btn_share);
-        imgNext = findViewById(R.id.imgnext);
-        imgPrev = findViewById(R.id.imgprev);
+
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String imageFileName = "IMG_" + timeStamp + "_" + new Random().nextInt(1000) + ".jpg";
         btnDownload = findViewById(R.id.btn_download);
@@ -65,12 +71,12 @@ public class ViewImages extends AppCompatActivity {
         position = intent.getIntExtra("position", 0);
         final String[] imgUri = {intent.getStringExtra("seletedfile")};
         Uri imguri = Uri.parse(intent.getStringExtra("seletedfile"));
-        ArrayList<String> arrayList = intent.getStringArrayListExtra("arrayofstring");
+        arrayList = intent.getStringArrayListExtra("arrayofstring");
         Log.d(TAG, "Position: " + position);
         Log.d(TAG, "ArrayList: " + arrayList);
         Log.d(TAG, "onCreate: " + imgUri[0]);
         file1 = new File(imgUri[0]);
-        final File[] file = {new File(imgUri[0])};
+        file = new File[]{new File(imgUri[0])};
         imageView.setImageURI(imguri);
         if (!picturesDirectory.exists()) {
             picturesDirectory.mkdirs();
@@ -81,6 +87,25 @@ public class ViewImages extends AppCompatActivity {
         icon = btnDownload.getDrawable();
         icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
         btnDownload.setImageDrawable(icon);
+
+        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                float diffX = e2.getX() - e1.getX();
+                float diffY = e2.getY() - e1.getY();
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                        if (diffX > 0) {
+                            onSwipeRight();
+                        } else {
+                            onSwipeLeft();
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -117,35 +142,45 @@ public class ViewImages extends AppCompatActivity {
                 startActivity(whatsappIntent);
             }
         });
-        imgNext.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                position++;
-                if (arrayList.size() == position) {
-                    position = 0;
-                }
 
-                Uri uri = Uri.parse(arrayList.get(position).toString());
-
-                imageView.setImageURI(uri);
-            }
-        });
-
-        imgPrev.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                position--;
-                if (position < 0) {
-                    position = arrayList.size() - 1;
-                }
-
-                Uri uri = Uri.parse(arrayList.get(position).toString());
-
-                imageView.setImageURI(uri);
-            }
-        });
 
     }
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return gestureDetector.onTouchEvent(event) || super.onTouchEvent(event);
+    }
+
+
+    public void nextImg() {
+        position++;
+        if (arrayList.size() == position) {
+            position = 0;
+        }
+
+        Uri uri = Uri.parse(arrayList.get(position).toString());
+
+        imageView.setImageURI(uri);
+    }
+
+    public void prevImg() {
+        position--;
+        if (position < 0) {
+            position = arrayList.size() - 1;
+        }
+
+        Uri uri = Uri.parse(arrayList.get(position).toString());
+
+        imageView.setImageURI(uri);
+    }
+
+
+    private void onSwipeLeft() {
+        nextImg();
+    }
+
+    private void onSwipeRight() {
+        prevImg();
+    }
 
 }
