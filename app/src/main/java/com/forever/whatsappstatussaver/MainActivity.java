@@ -24,8 +24,20 @@ import android.widget.Toast;
 
 import com.forever.whatsappstatussaver.Fragment.HomeFragment;
 import com.forever.whatsappstatussaver.Fragment.PermisionFragment;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
+import com.google.android.gms.ads.rewarded.RewardItem;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
+import com.google.firebase.Firebase;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.analytics.FirebaseAnalytics;
+import com.google.firebase.crashlytics.FirebaseCrashlytics;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -33,21 +45,32 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_MANAGE_ALL_FILES_ACCESS_PERMISSION = 101;
-    TabLayout tabLayout;
-    ViewPager viewPager;
     private static final int PERMISSION_REQUEST_STORAGE = 1;
 
-    viewpagerAdapter viewpagerAdapter;
     FloatingActionButton btnRefresh;
-
-
-
+    RewardedInterstitialAd rewardedInterstitialAd;
+     public static boolean isFirsttime=true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        FirebaseApp.initializeApp(this);
+        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        FirebaseCrashlytics.getInstance();
         btnRefresh=findViewById(R.id.btn_refresh);
+        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+            @Override
+            public void onInitializationComplete(@NonNull InitializationStatus initializationStatus) {
+                Log.d(TAG, "onInitializationComplete: ");
+            }
+        });
+        if(!isFirsttime)
+        {
+            loadAd();
+        }
+
 
         requestPermistion();
         showPermissonFrag();
@@ -66,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
     public boolean isAllFilePermiossionEnable()
     {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -87,6 +111,34 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "showPermissonFrag: ");
     }
 
+    public void loadAd() {
+        // Use the test ad unit ID to load an ad.
+        RewardedInterstitialAd.load(MainActivity.this, "ca-app-pub-3940256099942544/5354046379",
+                new AdRequest.Builder().build(),  new RewardedInterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(RewardedInterstitialAd ad) {
+                        Log.d(TAG, "Ad was loaded.");
+                        rewardedInterstitialAd = ad;
+                        rewardedInterstitialAd.show(MainActivity.this,null);
+                    }
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError loadAdError) {
+                        Log.d(TAG, loadAdError.toString());
+                        rewardedInterstitialAd = null;
+                    }
+                });
+    }
+
+    @Override
+    protected void onResume() {
+        Log.d(TAG, "onResume: ");
+        super.onResume();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
 
     public void requestPermistion()
     {

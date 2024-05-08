@@ -16,18 +16,31 @@ import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 
+import android.os.Handler;
+import android.os.StrictMode;
+import android.service.controls.ControlsProviderService;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 
@@ -36,6 +49,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -55,11 +69,59 @@ public class ViewImages extends AppCompatActivity {
     ArrayList<String> arrayList;
 
     File[] file;
+    LinearLayout linearLayout;
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        loadAd();
+    }
+    RewardedInterstitialAd rewardedInterstitialAd;
+    public void loadAd() {
+        // Use the test ad unit ID to load an ad.
+        RewardedInterstitialAd.load(ViewImages.this, getString(R.string.rewardadunit),
+                new AdRequest.Builder().build(),  new RewardedInterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(RewardedInterstitialAd ad) {
+                        Log.d(ControlsProviderService.TAG, "Ad was loaded.");
+                        rewardedInterstitialAd = ad;
+                        rewardedInterstitialAd.show(ViewImages.this,null);
+                    }
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError loadAdError) {
+                        Log.d(ControlsProviderService.TAG, loadAdError.toString());
+                        rewardedInterstitialAd = null;
+                    }
+                });
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_images);
+
+        linearLayout=findViewById(R.id.adView);
+
+                AdView adView = new AdView(getApplicationContext());
+                adView.setAdSize(getAdSize());
+                adView.setAdUnitId(getString(R.string.banneradunit));
+                linearLayout.removeAllViews();
+                linearLayout.addView(adView);
+                AdRequest adRequest = new AdRequest.Builder().build();
+                adView.loadAd(adRequest);
+
+
+
+        if(Build.VERSION.SDK_INT>=24){
+            try{
+                Method m = StrictMode.class.getMethod("disableDeathOnFileUriExposure");
+                m.invoke(null);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+
+
         btnShare = findViewById(R.id.btn_share);
 
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
@@ -124,6 +186,7 @@ public class ViewImages extends AppCompatActivity {
                     fis.close();
                     fos.close();
                     MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
+                    Toast.makeText(ViewImages.this, "Saved", Toast.LENGTH_SHORT).show();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -139,6 +202,7 @@ public class ViewImages extends AppCompatActivity {
                 Uri uri = Uri.parse(imgUri[0]);
                 whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
                 whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 startActivity(whatsappIntent);
             }
         });
@@ -161,6 +225,24 @@ public class ViewImages extends AppCompatActivity {
         Uri uri = Uri.parse(arrayList.get(position).toString());
 
         imageView.setImageURI(uri);
+    }
+    private AdSize getAdSize() {
+        // Determine the screen width (less decorations) to use for the ad width.
+        Display display = getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        display.getMetrics(outMetrics);
+
+        float density = outMetrics.density;
+
+        float adWidthPixels = linearLayout.getWidth();
+
+        // If the ad hasn't been laid out, default to the full screen width.
+        if (adWidthPixels == 0) {
+            adWidthPixels = outMetrics.widthPixels;
+        }
+
+        int adWidth = (int) (adWidthPixels / density);
+        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(this, adWidth);
     }
 
     public void prevImg() {

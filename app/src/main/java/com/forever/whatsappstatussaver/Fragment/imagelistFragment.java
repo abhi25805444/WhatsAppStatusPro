@@ -7,6 +7,7 @@ import android.content.UriPermission;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.core.content.ContextCompat;
@@ -35,6 +36,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -109,7 +111,13 @@ public class imagelistFragment extends Fragment {
         protected Void doInBackground(Void... voids) {
 
             ar.clear();
-            ar = executeNew();
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            {
+                ar = executeNew();
+            }else {
+                ar = executeOld();
+            }
+
             return null;
         }
 
@@ -140,7 +148,13 @@ public class imagelistFragment extends Fragment {
 
         @Override
         protected ArrayList<DocumentFile> doInBackground(Void... voids) {
-            return executeNew(); // Fetch updated data
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            {
+                return executeNew();
+            }else {
+                return  executeOld();
+            }
+            // Fetch updated data
         }
 
         @Override
@@ -152,9 +166,18 @@ public class imagelistFragment extends Fragment {
                 ar.clear(); // Clear existing data
                 ar.addAll(newAr); // Update with new data
                 imageRecyclerViewAdapter.notifyDataSetChanged(); // Notify adapter
+                updateEmptyViewVisibility();
             }
 
             isRefreshClick = false; // Reset refresh state
+        }
+    }
+
+    private void updateEmptyViewVisibility() {
+        if (imageRecyclerViewAdapter.getItemCount() == 0) {
+            view.setVisibility(View.VISIBLE);
+        } else {
+            view.setVisibility(View.GONE);
         }
     }
 
@@ -196,6 +219,35 @@ public class imagelistFragment extends Fragment {
 
         return imagesList;
     }
+
+    private ArrayList<DocumentFile> executeOld() {
+
+        final ArrayList<DocumentFile> imagesList = new ArrayList<>();
+
+            File[] statusFiles;
+            statusFiles = new File(Environment.getExternalStorageDirectory() +
+                File.separator + "WhatsApp/Media/.Statuses").listFiles();;
+            imagesList.clear();
+
+            if (statusFiles != null && statusFiles.length > 0) {
+
+                Arrays.sort(statusFiles);
+                for (File file : statusFiles) {
+                    if (file.getName().contains(".nomedia"))
+                        continue;
+
+                    if(file.getName().contains(".jpg"))
+                    {
+                        imagesList.add(DocumentFile.fromFile(file));
+                    }
+                    Log.d(TAG, "executeOld: "+file.getName());
+
+                }
+            }
+            return imagesList;
+
+    }
+
 
     private static boolean isImage(DocumentFile file, Context context) {
         String mimeType = context.getContentResolver().getType(file.getUri());

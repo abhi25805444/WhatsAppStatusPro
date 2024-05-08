@@ -13,23 +13,37 @@ import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
+import android.service.controls.ControlsProviderService;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Display;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
+import android.widget.Toast;
 import android.widget.VideoView;
 
+
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
+import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -44,6 +58,7 @@ public class ViewVideos extends AppCompatActivity {
     ArrayList<String> stringArrayList;
     File[] file;
     VideoView videoView;
+    LinearLayout linearLayout;
 
     private GestureDetector gestureDetector;
     private static final int SWIPE_THRESHOLD = 100;
@@ -55,9 +70,70 @@ public class ViewVideos extends AppCompatActivity {
     }
 
     @Override
+    public void onBackPressed() {
+        loadAd();
+        super.onBackPressed();
+    }
+    RewardedInterstitialAd rewardedInterstitialAd;
+    public void loadAd() {
+        // Use the test ad unit ID to load an ad.
+        RewardedInterstitialAd.load(ViewVideos.this, getString(R.string.rewardadunit),
+                new AdRequest.Builder().build(),  new RewardedInterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(RewardedInterstitialAd ad) {
+                        Log.d(ControlsProviderService.TAG, "Ad was loaded.");
+                        rewardedInterstitialAd = ad;
+                        rewardedInterstitialAd.show(ViewVideos.this,null);
+                    }
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError loadAdError) {
+                        Log.d(ControlsProviderService.TAG, loadAdError.toString());
+                        rewardedInterstitialAd = null;
+                    }
+                });
+    }
+
+    private AdSize getAdSize() {
+        // Determine the screen width (less decorations) to use for the ad width.
+        Display display = getWindowManager().getDefaultDisplay();
+        DisplayMetrics outMetrics = new DisplayMetrics();
+        display.getMetrics(outMetrics);
+
+        float density = outMetrics.density;
+
+        float adWidthPixels = linearLayout.getWidth();
+
+        // If the ad hasn't been laid out, default to the full screen width.
+        if (adWidthPixels == 0) {
+            adWidthPixels = outMetrics.widthPixels;
+        }
+
+        int adWidth = (int) (adWidthPixels / density);
+        return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(this, adWidth);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(Build.VERSION.SDK_INT>=24){
+            try{
+                Method m = StrictMode.class.getMethod("disableDeathOnFileUriExposure");
+                m.invoke(null);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
         setContentView(R.layout.activity_view_videos);
+
+        linearLayout=findViewById(R.id.adView);
+
+        AdView adView = new AdView(getApplicationContext());
+        adView.setAdSize(getAdSize());
+        adView.setAdUnitId(getString(R.string.banneradunit));
+        linearLayout.removeAllViews();
+        linearLayout.addView(adView);
+        AdRequest adRequest = new AdRequest.Builder().build();
+        adView.loadAd(adRequest);
         videoView = findViewById(R.id.videoView);
         btnDownload = findViewById(R.id.btn_download);
         btnShare = findViewById(R.id.btn_share);
@@ -130,6 +206,7 @@ public class ViewVideos extends AppCompatActivity {
                     fis.close();
                     fos.close();
                     MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
+                    Toast.makeText(ViewVideos.this, "Saved", Toast.LENGTH_SHORT).show();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -141,7 +218,6 @@ public class ViewVideos extends AppCompatActivity {
                 Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
                 whatsappIntent.setType("image/*");
                 whatsappIntent.setPackage("com.whatsapp");
-
                 Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
                 whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
                 whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
@@ -164,6 +240,12 @@ public class ViewVideos extends AppCompatActivity {
         file[0] = new File(stringArrayList.get(position));
         imgUri = stringArrayList.get(position);
         videoView.setVideoURI(Uri.parse(stringArrayList.get(position)));
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        videoView.start();
     }
 
     public void prevImg() {
