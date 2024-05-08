@@ -32,11 +32,20 @@
         android:tint="@color/white"
         app:backgroundTint="@color/white" />
 
+    <LinearLayout
+        android:id="@+id/adView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:orientation="vertical" />
+
 
 
 
     <VideoView
         android:id="@+id/videoView"
+        android:layout_below="@id/adView"
         android:layout_centerInParent="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

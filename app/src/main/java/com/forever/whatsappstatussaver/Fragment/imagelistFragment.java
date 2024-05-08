@@ -7,6 +7,7 @@ import android.content.UriPermission;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.core.content.ContextCompat;
@@ -27,6 +28,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.forever.whatsappstatussaver.Adapters.ImageRecyclerViewAdapter;
+import com.forever.whatsappstatussaver.Interface.RefreshInterface;
 import com.forever.whatsappstatussaver.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -35,14 +37,14 @@ import java.io.File;
 import java.io.FilenameFilter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
-public class imagelistFragment extends Fragment {
+public class imagelistFragment extends Fragment implements RefreshInterface {
     RecyclerView imageRecyclerView;
     int sizeofArray;
     ArrayList<File> arrayofImages = new ArrayList<File>();
-    FloatingActionButton btnRefresh;
 
     ImageRecyclerViewAdapter imageRecyclerViewAdapter;
     FragmentTransaction fragmentTransaction;
@@ -59,57 +61,61 @@ public class imagelistFragment extends Fragment {
 
         Log.d(TAG, "onCreateView: inside of imagefrag ");
 
+
+
+
+        HomeFragment homeFragment=new HomeFragment();
+        homeFragment.setRefreshInterface(this);
         View root = inflater.inflate(R.layout.fragment_imagelist, container, false);
-
-
-
         view = root.findViewById(R.id.emptyviewofimage);
-        btnRefresh = root.findViewById(R.id.btn_refresh);
         sizeofArray = ar.size();
         progressBar=root.findViewById(R.id.progressBar);
-        Drawable icon = btnRefresh.getDrawable();
+        /*Drawable icon = btnRefresh.getDrawable();
         icon.setColorFilter(ContextCompat.getColor(getContext(), R.color.white), PorterDuff.Mode.SRC_IN);
-        btnRefresh.setImageDrawable(icon);
+        btnRefresh.setImageDrawable(icon);*/
 
 
         imageRecyclerView = root.findViewById(R.id.imageRecyclerView);
         imageRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
         fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
 
+
+
         new getStatus().execute();
 
 
-        btnRefresh.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if(!isRefreshClick)
-                {
-                    new refresh().execute();
-                }
 
-              /*  if (sizeofArray != executeNew().size()) {
-                    if (imageRecyclerViewAdapter.getItemCount() == 0) {
-                        view.setVisibility(View.VISIBLE);
-                    } else {
-                        view.setVisibility(View.GONE);
-                    }
-                    imageRecyclerViewAdapter.notifyDataChanges();
-                }*/
-
-
-            }
-        });
         return root;
 
     }
 
-        private class getStatus extends AsyncTask<Void, Void, Void> {
+    @Override
+    public void onRefresh() {
+        if(!isRefreshClick)
+        {
+            new refresh().execute();
+        }
+        Log.d(TAG, "onRefresh: ");
+    }
+
+    public void setInterface(HomeFragment homeFragment)
+    {
+        homeFragment.setRefreshInterface(this);
+    }
+
+    private class getStatus extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... voids) {
 
             ar.clear();
-            ar = executeNew();
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            {
+                ar = executeNew();
+            }else {
+                ar = executeOld();
+            }
+
             return null;
         }
 
@@ -140,7 +146,13 @@ public class imagelistFragment extends Fragment {
 
         @Override
         protected ArrayList<DocumentFile> doInBackground(Void... voids) {
-            return executeNew(); // Fetch updated data
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            {
+                return executeNew();
+            }else {
+                return  executeOld();
+            }
+            // Fetch updated data
         }
 
         @Override
@@ -152,9 +164,18 @@ public class imagelistFragment extends Fragment {
                 ar.clear(); // Clear existing data
                 ar.addAll(newAr); // Update with new data
                 imageRecyclerViewAdapter.notifyDataSetChanged(); // Notify adapter
+                updateEmptyViewVisibility();
             }
 
             isRefreshClick = false; // Reset refresh state
+        }
+    }
+
+    private void updateEmptyViewVisibility() {
+        if (imageRecyclerViewAdapter.getItemCount() == 0) {
+            view.setVisibility(View.VISIBLE);
+        } else {
+            view.setVisibility(View.GONE);
         }
     }
 
@@ -173,8 +194,6 @@ public class imagelistFragment extends Fragment {
     private ArrayList<DocumentFile> executeNew() {
 
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();
-
-        Handler mainHandler = new Handler(Looper.getMainLooper());
 
         List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
 
@@ -196,6 +215,35 @@ public class imagelistFragment extends Fragment {
 
         return imagesList;
     }
+
+    private ArrayList<DocumentFile> executeOld() {
+
+        final ArrayList<DocumentFile> imagesList = new ArrayList<>();
+
+            File[] statusFiles;
+            statusFiles = new File(Environment.getExternalStorageDirectory() +
+                File.separator + "WhatsApp/Media/.Statuses").listFiles();;
+            imagesList.clear();
+
+            if (statusFiles != null && statusFiles.length > 0) {
+
+                Arrays.sort(statusFiles);
+                for (File file : statusFiles) {
+                    if (file.getName().contains(".nomedia"))
+                        continue;
+
+                    if(file.getName().contains(".jpg"))
+                    {
+                        imagesList.add(DocumentFile.fromFile(file));
+                    }
+                    Log.d(TAG, "executeOld: "+file.getName());
+
+                }
+            }
+            return imagesList;
+
+    }
+
 
     private static boolean isImage(DocumentFile file, Context context) {
         String mimeType = context.getContentResolver().getType(file.getUri());

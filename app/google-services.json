@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "853624085417",
+    "project_id": "status-saver-9a717",
+    "storage_bucket": "status-saver-9a717.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:853624085417:android:2316a288903848d918c2b8",
+        "android_client_info": {
+          "package_name": "com.forever.statussaver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBH7CgQHDqPEC5KWicOjrg-S8eYJDftdYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:853624085417:android:da1ed15c32de85b818c2b8",
+        "android_client_info": {
+          "package_name": "com.forever.whatsappstatussaver"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBH7CgQHDqPEC5KWicOjrg-S8eYJDftdYQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

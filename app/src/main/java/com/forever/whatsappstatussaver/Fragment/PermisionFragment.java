@@ -35,6 +35,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
+
 import com.forever.whatsappstatussaver.R;
 
 import java.util.Objects;
@@ -49,6 +50,18 @@ public class PermisionFragment extends Fragment {
     Button btnPermision;
 
     private static final int PERMISSION_REQUEST_STORAGE = 1;
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        Log.d(TAG, "onRequestPermissionsResult: "+requestCode);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
+
+        } else {
+            showHomeFrag();
+        }
+
+    }
 
     private static final int REQUEST_PERMISSIONS = 1234;
 
@@ -71,6 +84,7 @@ public class PermisionFragment extends Fragment {
 
         Intent intent = sm.getPrimaryStorageVolume().createOpenDocumentTreeIntent();
         String startDir = "Android%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses";
+//        startDir = "Android%2Fmedia%2Fcom.whatsapp.w4b%2FWhatsApp Business%2FMedia%2F.Statuses";
 
         Uri uri = intent.getParcelableExtra("android.provider.extra.INITIAL_URI");
 
@@ -91,18 +105,7 @@ public class PermisionFragment extends Fragment {
         activityResultLauncher.launch(intent);
     }
 
-    @SuppressLint("UseRequireInsteadOfGet")
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == REQUEST_PERMISSIONS && grantResults.length > 0) {
-            if (arePermissionDenied()) {
-                ((ActivityManager) Objects.requireNonNull(getActivity().getSystemService(ACTIVITY_SERVICE))).clearApplicationUserData();
-                getActivity().recreate();
-            }
-        }
-    }
 
 
 
@@ -113,7 +116,7 @@ public class PermisionFragment extends Fragment {
         context = getActivity().getApplicationContext();
         View root = inflater.inflate(R.layout.fragment_permision, container, false);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
+        if (arePermissionDenied()) {
 
             // If Android 10+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -159,14 +162,6 @@ public class PermisionFragment extends Fragment {
         Log.d(TAG, "showHomeFrag: ");
     }
 
-    public void requestPermistion() {
-        ActivityCompat.requestPermissions(getActivity(),
-                new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                        Manifest.permission.MANAGE_EXTERNAL_STORAGE
-                },
-                PERMISSION_REQUEST_STORAGE);
-    }
 
     private boolean arePermissionDenied() {
 
@@ -199,8 +194,6 @@ public class PermisionFragment extends Fragment {
                                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
                     showHomeFrag();
-
-                    Toast.makeText(context, "Success", Toast.LENGTH_SHORT).show();
 
                 }
             }
