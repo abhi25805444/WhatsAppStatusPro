@@ -5,7 +5,6 @@ import static android.content.ContentValues.TAG;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
@@ -22,7 +21,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 
-import com.forever.whatsappstatussaver.Interface.RefreshInterface;
 import com.forever.whatsappstatussaver.MainActivity;
 import com.forever.whatsappstatussaver.R;
 import com.forever.whatsappstatussaver.viewpagerAdapter;
@@ -43,28 +41,16 @@ public class HomeFragment extends Fragment {
     Spinner spinner;
     LinearLayout linearLayout;
     ImageView btnNoAds;
-    FloatingActionButton btn_refresh;
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        if (viewpagerAdapter.getItem(0) instanceof imagelistFragment) {
-            ((imagelistFragment) viewpagerAdapter.getItem(0)).setInterface(this);
-        }
-        super.onViewCreated(view, savedInstanceState);
-    }
-
-    RefreshInterface refreshInterface;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View root = inflater.inflate(R.layout.fragment_home, container, false);
-        MainActivity.isFirsttime = false;
-        spinner = root.findViewById(R.id.spinner);
+        View root=inflater.inflate(R.layout.fragment_home, container, false);
+        MainActivity.isFirsttime=false;
+        spinner=root.findViewById(R.id.spinner);
         tabLayout = root.findViewById(R.id.tabLayout);
-        linearLayout = root.findViewById(R.id.adView);
-        btnNoAds = root.findViewById(R.id.noadsicon);
-        btn_refresh = root.findViewById(R.id.btn_refresh);
+        linearLayout=root.findViewById(R.id.adView);
+        btnNoAds=root.findViewById(R.id.noadsicon);
         AdView adView = new AdView(getActivity());
         adView.setAdSize(getAdSize());
         adView.setAdUnitId(getString(R.string.banneradunit));
@@ -72,18 +58,6 @@ public class HomeFragment extends Fragment {
         linearLayout.addView(adView);
         AdRequest adRequest = new AdRequest.Builder().build();
         adView.loadAd(adRequest);
-        char c = '1';
-
-
-        btn_refresh.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                refreshInterface.onRefresh();
-            }
-        });
-
-
 
         String[] options = {"WHATSAPP", "WHATSAPP BUSINESS"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), R.layout.spinner_item_layout, options);
@@ -108,7 +82,7 @@ public class HomeFragment extends Fragment {
             @Override
             public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                 super.onAdFailedToLoad(loadAdError);
-                Log.d(TAG, "onAdFailedToLoad: " + loadAdError.toString());
+                Log.d(TAG, "onAdFailedToLoad: "+loadAdError.toString());
             }
 
             @Override
@@ -138,15 +112,9 @@ public class HomeFragment extends Fragment {
 
         viewPager.setAdapter(viewpagerAdapter);
         tabLayout.setupWithViewPager(viewPager);
-
-
-        /*if (viewpagerAdapter.getItem(1) instanceof imagelistFragment) {
-            ((imagelistFragment) viewpagerAdapter.getItem(1)).setInterface(this);
-        }*/
         // Inflate the layout for this fragment
         return root;
     }
-
     private AdSize getAdSize() {
         // Determine the screen width (less decorations) to use for the ad width.
         Display display = getActivity().getWindowManager().getDefaultDisplay();
@@ -164,9 +132,5 @@ public class HomeFragment extends Fragment {
 
         int adWidth = (int) (adWidthPixels / density);
         return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(getActivity(), adWidth);
-    }
-
-    public void setRefreshInterface(RefreshInterface refreshInterface) {
-        this.refreshInterface = refreshInterface;
     }
 }
