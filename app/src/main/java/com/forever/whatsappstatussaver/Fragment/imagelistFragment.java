@@ -13,6 +13,7 @@ import android.os.Bundle;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -52,56 +53,40 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
     View view;
     private ProgressBar progressBar;
 
-    boolean isRefreshClick=false;
+    static boolean isRefreshClick = false;
 
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
-        Log.d(TAG, "onCreateView: inside of imagefrag ");
-
-
-
-
-        HomeFragment homeFragment=new HomeFragment();
-        homeFragment.setRefreshInterface(this);
         View root = inflater.inflate(R.layout.fragment_imagelist, container, false);
         view = root.findViewById(R.id.emptyviewofimage);
         sizeofArray = ar.size();
-        progressBar=root.findViewById(R.id.progressBar);
-        /*Drawable icon = btnRefresh.getDrawable();
-        icon.setColorFilter(ContextCompat.getColor(getContext(), R.color.white), PorterDuff.Mode.SRC_IN);
-        btnRefresh.setImageDrawable(icon);*/
-
-
+        progressBar = root.findViewById(R.id.progressBar);
         imageRecyclerView = root.findViewById(R.id.imageRecyclerView);
         imageRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
         fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
-
-
+        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+        HomeFragment homeFragment = (HomeFragment) fragmentManager.findFragmentById(R.id.container);
+        homeFragment.setRefreshInterface(this);
 
         new getStatus().execute();
-
-
-
         return root;
 
     }
 
     @Override
-    public void onRefresh() {
-        if(!isRefreshClick)
-        {
+    public void onRefreshImage() {
+        if (!isRefreshClick) {
             new refresh().execute();
         }
         Log.d(TAG, "onRefresh: ");
     }
 
-    public void setInterface(HomeFragment homeFragment)
-    {
-        homeFragment.setRefreshInterface(this);
+    public void showToast() {
+        Toast.makeText(getContext(), "hello", Toast.LENGTH_SHORT).show();
     }
+
 
     private class getStatus extends AsyncTask<Void, Void, Void> {
 
@@ -109,10 +94,9 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         protected Void doInBackground(Void... voids) {
 
             ar.clear();
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ar = executeNew();
-            }else {
+            } else {
                 ar = executeOld();
             }
 
@@ -122,8 +106,10 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            progressBar.setVisibility(View.GONE);
-
+            if(progressBar!=null)
+            {
+                progressBar.setVisibility(View.GONE);
+            }
             imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
             imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
 
@@ -135,30 +121,41 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
 
         }
     }
-    private class refresh extends AsyncTask<Void, Void, ArrayList<DocumentFile>> {
+
+    public class refresh extends AsyncTask<Void, Void, ArrayList<DocumentFile>> {
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-            isRefreshClick = true; // Set refresh state to true
-            progressBar.setVisibility(View.VISIBLE); // Show progress bar
+            isRefreshClick = true;
+            if (imageRecyclerView != null) {
+                imageRecyclerView.setVisibility(View.GONE);
+            }
+            if(progressBar!=null)
+            {
+                progressBar.setVisibility(View.VISIBLE);
+            }
         }
 
         @Override
         protected ArrayList<DocumentFile> doInBackground(Void... voids) {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 return executeNew();
-            }else {
-                return  executeOld();
+            } else {
+                return executeOld();
             }
-            // Fetch updated data
         }
 
         @Override
         protected void onPostExecute(ArrayList<DocumentFile> newAr) {
             super.onPostExecute(newAr);
-            progressBar.setVisibility(View.GONE); // Hide progress bar
+            if(progressBar!=null)
+            {
+                progressBar.setVisibility(View.GONE);
+            }
+            if (imageRecyclerView != null) {
+                imageRecyclerView.setVisibility(View.VISIBLE);
+            }
 
             if (newAr != null && !areArrayListsEqual(ar, newAr)) { // Check if the new list is different
                 ar.clear(); // Clear existing data
@@ -191,6 +188,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         }
         return true;
     }
+
     private ArrayList<DocumentFile> executeNew() {
 
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();
@@ -220,27 +218,27 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
 
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();
 
-            File[] statusFiles;
-            statusFiles = new File(Environment.getExternalStorageDirectory() +
-                File.separator + "WhatsApp/Media/.Statuses").listFiles();;
-            imagesList.clear();
+        File[] statusFiles;
+        statusFiles = new File(Environment.getExternalStorageDirectory() +
+                File.separator + "WhatsApp/Media/.Statuses").listFiles();
+        ;
+        imagesList.clear();
 
-            if (statusFiles != null && statusFiles.length > 0) {
+        if (statusFiles != null && statusFiles.length > 0) {
 
-                Arrays.sort(statusFiles);
-                for (File file : statusFiles) {
-                    if (file.getName().contains(".nomedia"))
-                        continue;
+            Arrays.sort(statusFiles);
+            for (File file : statusFiles) {
+                if (file.getName().contains(".nomedia"))
+                    continue;
 
-                    if(file.getName().contains(".jpg"))
-                    {
-                        imagesList.add(DocumentFile.fromFile(file));
-                    }
-                    Log.d(TAG, "executeOld: "+file.getName());
-
+                if (file.getName().contains(".jpg")) {
+                    imagesList.add(DocumentFile.fromFile(file));
                 }
+                Log.d(TAG, "executeOld: " + file.getName());
+
             }
-            return imagesList;
+        }
+        return imagesList;
 
     }
 

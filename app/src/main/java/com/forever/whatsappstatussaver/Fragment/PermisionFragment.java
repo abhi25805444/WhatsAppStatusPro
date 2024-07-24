@@ -9,7 +9,9 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -33,6 +35,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -48,13 +51,13 @@ public class PermisionFragment extends Fragment {
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
     Button btnPermision;
-
-    private static final int PERMISSION_REQUEST_STORAGE = 1;
-
+    TextView textView2;
+    private static final int REQUEST_PERMISSIONS = 1234;
+    Context context;
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        Log.d(TAG, "onRequestPermissionsResult: "+requestCode);
+        Log.d(TAG, "onRequestPermissionsResult: " + requestCode);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
 
         } else {
@@ -63,19 +66,52 @@ public class PermisionFragment extends Fragment {
 
     }
 
-    private static final int REQUEST_PERMISSIONS = 1234;
-
-    Context context;
-
     @Override
     public void onResume() {
         super.onResume();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
-
-           // showHomeFrag();
-
+            // showHomeFrag()
         }
 
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+
+        context = getActivity().getApplicationContext();
+        View root = inflater.inflate(R.layout.fragment_permision, container, false);
+        this.textView2 = root.findViewById(R.id.txt2);
+
+        if (arePermissionDenied()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+
+            } else {
+                textView2.setText("2. Click on Allow >");
+            }
+        } else {
+            showHomeFrag();
+        }
+
+        btnPermision = root.findViewById(R.id.btnpermision);
+        btnPermision.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
+                    // If Android 10+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        requestPermissionQ();
+                    }
+                    requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
+                } else {
+                    showHomeFrag();
+                }
+
+            }
+        });
+
+        return root;
     }
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
@@ -104,56 +140,6 @@ public class PermisionFragment extends Fragment {
 
         activityResultLauncher.launch(intent);
     }
-
-
-
-
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-
-        context = getActivity().getApplicationContext();
-        View root = inflater.inflate(R.layout.fragment_permision, container, false);
-
-        if (arePermissionDenied()) {
-
-            // If Android 10+
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                requestPermissionQ();
-            }
-
-            requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
-        } else {
-            showHomeFrag();
-        }
-
-
-        btnPermision = root.findViewById(R.id.btnpermision);
-        btnPermision.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
-
-                    // If Android 10+
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        requestPermissionQ();
-                    }
-
-                    requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
-                } else {
-                    showHomeFrag();
-                }
-
-            }
-        });
-
-        return root;
-    }
-
-
-
     public void showHomeFrag() {
         FragmentTransaction ft = getActivity().getSupportFragmentManager().beginTransaction();
         Fragment Homefrag = new HomeFragment();
@@ -161,14 +147,10 @@ public class PermisionFragment extends Fragment {
         ft.commit();
         Log.d(TAG, "showHomeFrag: ");
     }
-
-
     private boolean arePermissionDenied() {
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return getActivity().getContentResolver().getPersistedUriPermissions().size() <= 0;
         }
-
         for (String permissions : PERMISSIONS) {
             if (ActivityCompat.checkSelfPermission(getActivity().getApplicationContext(), permissions) != PackageManager.PERMISSION_GRANTED) {
                 return true;
@@ -183,16 +165,11 @@ public class PermisionFragment extends Fragment {
                 if (result.getResultCode() == Activity.RESULT_OK) {
 
                     Intent data = result.getData();
-
                     assert data != null;
-
-                    Log.d("HEY: ", data.getData().toString());
-
                     context.getContentResolver().takePersistableUriPermission(
                             data.getData(),
                             Intent.FLAG_GRANT_READ_URI_PERMISSION |
                                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-
                     showHomeFrag();
 
                 }

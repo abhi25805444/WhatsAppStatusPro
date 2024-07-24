@@ -14,6 +14,7 @@ import android.os.Bundle;
 import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -31,6 +32,7 @@ import android.widget.Toast;
 import com.forever.whatsappstatussaver.Adapters.ImageRecyclerViewAdapter;
 import com.forever.whatsappstatussaver.Adapters.VideoRecylerviewAdapter;
 import com.forever.whatsappstatussaver.Interface.RefreshInterface;
+import com.forever.whatsappstatussaver.Interface.VideoRefreshInterface;
 import com.forever.whatsappstatussaver.Model.Status;
 import com.forever.whatsappstatussaver.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -43,7 +45,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-public class videolistFragment extends Fragment implements RefreshInterface {
+public class videolistFragment extends Fragment implements VideoRefreshInterface {
 
     RecyclerView recyclerView;
     ArrayList<File> arrayofVideo = new ArrayList<>();
@@ -64,6 +66,10 @@ public class videolistFragment extends Fragment implements RefreshInterface {
         progressBar = root.findViewById(R.id.progressBar);
         recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
 
+        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+        HomeFragment homeFragment = (HomeFragment) fragmentManager.findFragmentById(R.id.container);
+        homeFragment.setVideoRefreshInterface(this);
+
 
         new MyAsyncTask().execute();
 
@@ -71,14 +77,10 @@ public class videolistFragment extends Fragment implements RefreshInterface {
     }
 
     @Override
-    public void onRefresh() {
-
+    public void onRefreshVideo() {
+        refreshVideoList();
     }
 
-    public void setInterface(HomeFragment homeFragment)
-    {
-        homeFragment.setRefreshInterface(this);
-    }
 
     private class MyAsyncTask extends AsyncTask<Void, Void, Void> {
         @Override
@@ -122,7 +124,14 @@ public class videolistFragment extends Fragment implements RefreshInterface {
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
-                progressBar.setVisibility(View.VISIBLE);
+                if(recyclerView!=null)
+                {
+                    recyclerView.setVisibility(View.GONE);
+                }
+                if(progressBar!=null)
+                {
+                    progressBar.setVisibility(View.VISIBLE);
+                }
             }
 
             @Override
@@ -140,6 +149,10 @@ public class videolistFragment extends Fragment implements RefreshInterface {
             protected void onPostExecute(ArrayList<DocumentFile> newAr) {
                 super.onPostExecute(newAr);
                 progressBar.setVisibility(View.GONE);
+                if(recyclerView!=null)
+                {
+                    recyclerView.setVisibility(View.VISIBLE);
+                }
                 if (newAr != null) {
                     if (!areArrayListsEqual(ar, newAr)) { // Check if the new list is different
                         ar.clear();

@@ -1,18 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/white"
     tools:context=".Fragment.PermisionFragment">
 
-<com.google.android.material.button.MaterialButton
-    android:id="@+id/btnpermision"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    app:cornerRadius="5dp"
-    android:text="Grant Permission"
-    android:layout_centerInParent="true"
-    android:backgroundTint="@color/blue"/>
+    <androidx.cardview.widget.CardView
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:cardBackgroundColor="@color/blue">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Status Saver"
+            android:layout_gravity="center"
+            android:textColor="@color/white"
+            android:fontFamily="@font/roboto_black"
+            android:textSize="20sp"/>
+
+    </androidx.cardview.widget.CardView>
+
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:scrollbars="none">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:layout_margin="10dp"
+        android:orientation="vertical">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_gravity="center_horizontal"
+            app:cardBackgroundColor="@color/white"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <ImageView
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:src="@drawable/ic_file" />
+
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:id="@+id/txtPermission"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/roboto_bold"
+            android:text="Permission Required"
+            android:textSize="17sp" />
+
+        <TextView
+            android:id="@+id/txtdes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/roboto_regular"
+            android:gravity="center"
+            android:text="To save status, you need to allow the storage permission."
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/txt1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/roboto_medium"
+            android:text="1. Click on Grant Permission >"
+            android:textSize="15sp" />
+
+        <TextView
+            android:id="@+id/txt2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/roboto_medium"
+            android:text="2. Click on Use This Folder >"
+            android:textSize="15sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnpermision"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="50dp"
+            android:layout_marginBottom="10dp"
+            android:backgroundTint="@color/blue"
+            android:fontFamily="@font/roboto_medium"
+            android:text="Grant Permission"
+            app:cornerRadius="5dp"
+            app:elevation="4dp" />
+
+    </LinearLayout>
+
+    </ScrollView>
+
+
 
 </RelativeLayout>
