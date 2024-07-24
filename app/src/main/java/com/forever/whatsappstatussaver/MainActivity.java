@@ -49,64 +49,47 @@ public class MainActivity extends AppCompatActivity {
 
     FloatingActionButton btnRefresh;
     RewardedInterstitialAd rewardedInterstitialAd;
-     public static boolean isFirsttime=true;
+    public static boolean isFirsttime = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         FirebaseApp.initializeApp(this);
-        FirebaseAnalytics mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
         FirebaseCrashlytics.getInstance();
-        btnRefresh=findViewById(R.id.btn_refresh);
+        btnRefresh = findViewById(R.id.btn_refresh);
         MobileAds.initialize(this, new OnInitializationCompleteListener() {
             @Override
             public void onInitializationComplete(@NonNull InitializationStatus initializationStatus) {
                 Log.d(TAG, "onInitializationComplete: ");
             }
         });
-        if(!isFirsttime)
-        {
+        if (!isFirsttime) {
             loadAd();
         }
 
 
-        requestPermistion();
+
         showPermissonFrag();
-
-
-
-           /* if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED && isAllFilePermiossionEnable()) {
-            {
-                showHomeFrag();
-            }
-        } else {
-                requestPermistion();
-                showPermissonFrag();
-
-        }*/
 
 
     }
 
-    public boolean isAllFilePermiossionEnable()
-    {
+    public boolean isAllFilePermiossionEnable() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if(Environment.isExternalStorageManager()) {
-               return true;
-            }
-            else {
+            if (Environment.isExternalStorageManager()) {
+                return true;
+            } else {
                 return false;
             }
         }
         return true;
     }
-    public void showPermissonFrag()
-    {
-        FragmentTransaction ft=getSupportFragmentManager().beginTransaction();
-        Fragment PermisionFrag=new PermisionFragment();
-        ft.replace(R.id.container,PermisionFrag);
+
+    public void showPermissonFrag() {
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        Fragment PermisionFrag = new PermisionFragment();
+        ft.replace(R.id.container, PermisionFrag);
         ft.commit();
         Log.d(TAG, "showPermissonFrag: ");
     }
@@ -114,13 +97,14 @@ public class MainActivity extends AppCompatActivity {
     public void loadAd() {
         // Use the test ad unit ID to load an ad.
         RewardedInterstitialAd.load(MainActivity.this, "ca-app-pub-3940256099942544/5354046379",
-                new AdRequest.Builder().build(),  new RewardedInterstitialAdLoadCallback() {
+                new AdRequest.Builder().build(), new RewardedInterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(RewardedInterstitialAd ad) {
                         Log.d(TAG, "Ad was loaded.");
                         rewardedInterstitialAd = ad;
-                        rewardedInterstitialAd.show(MainActivity.this,null);
+                        rewardedInterstitialAd.show(MainActivity.this, null);
                     }
+
                     @Override
                     public void onAdFailedToLoad(LoadAdError loadAdError) {
                         Log.d(TAG, loadAdError.toString());
@@ -140,8 +124,7 @@ public class MainActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
-    public void requestPermistion()
-    {
+    public void requestPermistion() {
         ActivityCompat.requestPermissions(this,
                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE,

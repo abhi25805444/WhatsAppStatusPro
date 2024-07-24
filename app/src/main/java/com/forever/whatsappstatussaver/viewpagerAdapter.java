@@ -10,6 +10,9 @@ import com.forever.whatsappstatussaver.Fragment.imagelistFragment;
 import com.forever.whatsappstatussaver.Fragment.videolistFragment;
 
 public class viewpagerAdapter extends FragmentPagerAdapter {
+
+
+    Fragment currentFrag;
     public viewpagerAdapter(@NonNull FragmentManager fm) {
         super(fm);
     }
@@ -19,11 +22,18 @@ public class viewpagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int position) {
         if(position==0)
         {
-            return new imagelistFragment();
+            currentFrag=new imagelistFragment();
+            return currentFrag;
         } else {
-            return new videolistFragment();
+            currentFrag=new videolistFragment();
+            return currentFrag;
         }
 
+    }
+
+    public Fragment getCurrentFrag()
+    {
+        return currentFrag;
     }
 
     @Nullable
