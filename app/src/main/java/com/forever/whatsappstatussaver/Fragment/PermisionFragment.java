@@ -119,7 +119,8 @@ public class PermisionFragment extends Fragment {
         StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
 
         Intent intent = sm.getPrimaryStorageVolume().createOpenDocumentTreeIntent();
-        String startDir = "Android%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses";
+//        String startDir = "Android%2Fmedia%2Fcom.whatsapp%2FWhatsApp%2FMedia%2F.Statuses";
+        String startDir = "Android%2Fmedia";
 //        startDir = "Android%2Fmedia%2Fcom.whatsapp.w4b%2FWhatsApp Business%2FMedia%2F.Statuses";
 
         Uri uri = intent.getParcelableExtra("android.provider.extra.INITIAL_URI");

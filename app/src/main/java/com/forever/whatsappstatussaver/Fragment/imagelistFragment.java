@@ -5,6 +5,7 @@ import static android.service.controls.ControlsProviderService.TAG;
 import android.content.Context;
 import android.content.UriPermission;
 import android.graphics.PorterDuff;
+import android.graphics.YuvImage;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -69,7 +70,6 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         HomeFragment homeFragment = (HomeFragment) fragmentManager.findFragmentById(R.id.container);
         homeFragment.setRefreshInterface(this);
-
         new getStatus().execute();
         return root;
 
@@ -81,6 +81,13 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             new refresh().execute();
         }
         Log.d(TAG, "onRefresh: ");
+    }
+
+    @Override
+    public void onExecuteNew(int TYPE) {
+        ar=executeNew(0);
+        imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
+        imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
     }
 
     public void showToast() {
@@ -95,7 +102,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
 
             ar.clear();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ar = executeNew();
+                ar = executeNew(0);
             } else {
                 ar = executeOld();
             }
@@ -140,7 +147,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         @Override
         protected ArrayList<DocumentFile> doInBackground(Void... voids) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                return executeNew();
+                return executeNew(0);
             } else {
                 return executeOld();
             }
@@ -189,27 +196,59 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         return true;
     }
 
-    private ArrayList<DocumentFile> executeNew() {
-
+    public ArrayList<DocumentFile> executeNew(int TYPE) {
+        Log.d(TAG, "executeNew: ");
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();
+         List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
 
-        List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
+        if (list.isEmpty()) {
+            Log.e(TAG, "No persisted URI permissions found.");
+            return imagesList;
+        }
 
-        DocumentFile file = DocumentFile.fromTreeUri(requireActivity(), list.get(0).getUri());
+        DocumentFile rootDir = DocumentFile.fromTreeUri(requireActivity(), list.get(0).getUri());
+        if (rootDir == null || !rootDir.isDirectory()) {
+            Log.e(TAG, "Root directory is null or not a directory.");
+            return imagesList;
+        }
 
-        DocumentFile[] statusFiles = file.listFiles();
+        // Navigate to the WhatsApp Status folder
+        DocumentFile whatsappDir;
+        if(TYPE==0)
+        {
+            whatsappDir = rootDir.findFile("com.whatsapp");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile(".Statuses");
 
+            if (whatsappDir == null || !whatsappDir.isDirectory()) {
+                Log.e(TAG, "WhatsApp Status directory is null or not a directory.");
+                return imagesList;
+            }
+        }else {
+            whatsappDir = rootDir.findFile("com.whatsapp.w4b");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp Business");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile(".Statuses");
+
+            if (whatsappDir == null || !whatsappDir.isDirectory()) {
+                Log.e(TAG, "WhatsApp Status directory is null or not a directory.");
+                return imagesList;
+            }
+        }
+
+
+        // List files in the WhatsApp Status directory
+        DocumentFile[] statusFiles = whatsappDir.listFiles();
         for (DocumentFile documentFile : statusFiles) {
-            if (documentFile != null) {
+            if (documentFile != null && documentFile.isFile()) {
                 Log.d(TAG, "executeNew: file name " + documentFile.getName());
                 if (isImage(documentFile, getContext())) {
                     imagesList.add(documentFile);
                 }
                 Log.d(TAG, "executeNew: file name " + documentFile.getName());
             }
-
         }
-
 
         return imagesList;
     }
