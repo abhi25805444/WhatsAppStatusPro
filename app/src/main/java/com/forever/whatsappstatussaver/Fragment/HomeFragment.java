@@ -2,10 +2,12 @@ package com.forever.whatsappstatussaver.Fragment;
 
 import static android.content.ContentValues.TAG;
 
+
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -23,6 +25,7 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
@@ -57,10 +60,12 @@ public class HomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
     }
+
     RefreshInterface refreshInterface;
     VideoRefreshInterface videoRefreshInterface;
-    private int WHATSAPP=0;
-    private  int WHATSAPPBUSINES=1;
+    private int WHATSAPP = 0;
+    private int WHATSAPPBUSINES = 1;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -85,7 +90,6 @@ public class HomeFragment extends Fragment {
         btn_refresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Fragment fragment = viewpagerAdapter.getCurrentFrag();
 
                 Log.d(TAG, "onClick: (((((((((((((((((( 1");
                 if (refreshInterface != null) {
@@ -113,26 +117,25 @@ public class HomeFragment extends Fragment {
         spinner.setAdapter(adapter);
 
 
-
-        if (spinner!=null)
-        {
+        if (spinner != null) {
             spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    if(position==WHATSAPPBUSINES)
-                    {
-                        showBottomSheetDialog();
-                        boolean isWhatsAppBusinessInstalled = isAppInstalled(getContext(), "com.whatsapp.w4b");
-                        if (isWhatsAppBusinessInstalled) {
+                    if (position == WHATSAPPBUSINES) {
 
+                        boolean isWhatsAppBusinessInstalled = isWhatsAppBusinessInstalled();
+                        if (isWhatsAppBusinessInstalled) {
+                            refreshInterface.onExecuteNew(WHATSAPPBUSINES);
+                            videoRefreshInterface.onExecuteNew(WHATSAPPBUSINES);
                             // WhatsApp Business is installed
                         } else {
                             Toast.makeText(getActivity(), "Please Install WhatsApp Business App ", Toast.LENGTH_SHORT).show();
-                            spinner.setSelection(0);
+                            spinner.setSelection(WHATSAPP);
                             // WhatsApp Business is not installed
                         }
-                    } else if (position==WHATSAPP) {
-
+                    } else if (position == WHATSAPP) {
+                        refreshInterface.onExecuteNew(WHATSAPP);
+                        videoRefreshInterface.onExecuteNew(WHATSAPP);
                     }
                 }
 
@@ -196,8 +199,24 @@ public class HomeFragment extends Fragment {
     }
 
     private void showBottomSheetDialog() {
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getContext(),R.style.SheetDialog);
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getContext(), R.style.SheetDialog);
         View bottomSheetView = LayoutInflater.from(getContext()).inflate(R.layout.wb_storage_permission, null);
+        Button btnpermision = bottomSheetView.findViewById(R.id.btnpermision);
+        if (btnpermision != null) {
+            btnpermision.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                  /*  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
+                        // If Android 10+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            requestPermissionQ();
+                        }
+                    } else {
+                       //todo close bottomsheet
+                    }*/
+                }
+            });
+        }
         bottomSheetDialog.setContentView(bottomSheetView);
         BottomSheetBehavior behavior = bottomSheetDialog.getBehavior();
         behavior.setDraggable(false);
@@ -228,13 +247,14 @@ public class HomeFragment extends Fragment {
         this.refreshInterface = refreshInterface;
     }
 
-    public boolean isAppInstalled(Context context, String packageName) {
-        PackageManager packageManager = context.getPackageManager();
+    public boolean isWhatsAppBusinessInstalled() {
+
+        PackageManager packageManager = getActivity().getPackageManager();
         try {
-            packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
-            return true;
+            packageManager.getPackageInfo("com.whatsapp.w4b", PackageManager.GET_ACTIVITIES);
+            return true; // WhatsApp Business is installed
         } catch (PackageManager.NameNotFoundException e) {
-            return false;
+            return false; // WhatsApp Business is not installed
         }
     }
 

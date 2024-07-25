@@ -81,6 +81,15 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
         refreshVideoList();
     }
 
+    @Override
+    public void onExecuteNew(int TYPE) {
+        ar=executeNew(TYPE);
+
+        Log.d(TAG, "onExecuteNew: ar "+ar.size());
+        videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
+        recyclerView.setAdapter(videoRecylerviewAdapter);
+    }
+
 
     private class MyAsyncTask extends AsyncTask<Void, Void, Void> {
         @Override
@@ -88,7 +97,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             ar.clear();
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             {
-                ar = executeNew();
+                ar = executeNew(0);
             }else {
                 ar = executeOld();
             }
@@ -110,7 +119,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             recyclerView.setAdapter(videoRecylerviewAdapter);
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             {
-                sizeofArray = executeNew().size();
+                sizeofArray = executeNew(0).size();
             }else {
                 sizeofArray = executeOld().size();
             }
@@ -138,7 +147,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             protected ArrayList<DocumentFile> doInBackground(Void... voids) {
                 if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 {
-                    return executeNew();
+                    return executeNew(0);
                 }else {
                     return executeOld();
                 }
@@ -181,16 +190,57 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
         return true;
     }
 
-    private ArrayList<DocumentFile> executeNew() {
+    private ArrayList<DocumentFile> executeNew(int TYPE) {
         final ArrayList<DocumentFile> videosList = new ArrayList<>();
         List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
-        DocumentFile file = DocumentFile.fromTreeUri(requireActivity(), list.get(0).getUri());
-        DocumentFile[] statusFiles = file.listFiles();
+
+        if (list.isEmpty()) {
+            Log.e(TAG, "No persisted URI permissions found.");
+            return videosList;
+        }
+
+        DocumentFile rootDir = DocumentFile.fromTreeUri(requireActivity(), list.get(0).getUri());
+        if (rootDir == null || !rootDir.isDirectory()) {
+            Log.e(TAG, "Root directory is null or not a directory.");
+            return videosList;
+        }
+
+        // Navigate to the WhatsApp Status folder
+        DocumentFile whatsappDir;
+
+        if(TYPE==0)
+        {
+            whatsappDir = rootDir.findFile("com.whatsapp");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile(".Statuses");
+
+            if (whatsappDir == null || !whatsappDir.isDirectory()) {
+                Log.e(TAG, "WhatsApp Status directory is null or not a directory.");
+                return videosList;
+            }
+        }
+        else {
+            whatsappDir = rootDir.findFile("com.whatsapp.w4b");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp Business");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");
+            if (whatsappDir != null) whatsappDir = whatsappDir.findFile(".Statuses");
+
+            if (whatsappDir == null || !whatsappDir.isDirectory()) {
+                Log.e(TAG, "WhatsApp Status directory is null or not a directory.");
+                return videosList;
+            }
+        }
+
+
+        // List files in the WhatsApp Status directory
+        DocumentFile[] statusFiles = whatsappDir.listFiles();
         for (DocumentFile documentFile : statusFiles) {
             if (documentFile != null && isVideo(documentFile, getContext())) {
                 videosList.add(documentFile);
             }
         }
+
         return videosList;
     }
 
