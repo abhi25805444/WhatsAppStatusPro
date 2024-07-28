@@ -4,14 +4,10 @@ import static android.service.controls.ControlsProviderService.TAG;
 
 import android.content.Context;
 import android.content.UriPermission;
-import android.graphics.PorterDuff;
-import android.graphics.YuvImage;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -20,8 +16,6 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,7 +26,6 @@ import android.widget.Toast;
 import com.forever.whatsappstatussaver.Adapters.ImageRecyclerViewAdapter;
 import com.forever.whatsappstatussaver.Interface.RefreshInterface;
 import com.forever.whatsappstatussaver.R;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
 
@@ -47,14 +40,13 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
     RecyclerView imageRecyclerView;
     int sizeofArray;
     ArrayList<File> arrayofImages = new ArrayList<File>();
-
     ImageRecyclerViewAdapter imageRecyclerViewAdapter;
     FragmentTransaction fragmentTransaction;
     ArrayList<DocumentFile> ar = new ArrayList();
     View view;
-    private ProgressBar progressBar;
-
+    public ProgressBar progressBar;
     static boolean isRefreshClick = false;
+    int TYPE;
 
 
     @Override
@@ -62,17 +54,34 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_imagelist, container, false);
         view = root.findViewById(R.id.emptyviewofimage);
-        sizeofArray = ar.size();
+        if (ar != null && ar.size() > 0) {
+            sizeofArray = ar.size();
+        }
         progressBar = root.findViewById(R.id.progressBar);
         imageRecyclerView = root.findViewById(R.id.imageRecyclerView);
-        imageRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
+
+        if (imageRecyclerView != null) {
+            imageRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
+        }
         fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         HomeFragment homeFragment = (HomeFragment) fragmentManager.findFragmentById(R.id.container);
-        homeFragment.setRefreshInterface(this);
-        new getStatus().execute();
-        return root;
+        if (homeFragment != null) {
+            homeFragment.setRefreshInterface(this);
+        }
 
+        return root;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (imageRecyclerView != null) {
+            imageRecyclerView = null;
+        }
+        if (imageRecyclerViewAdapter != null) {
+            imageRecyclerViewAdapter = null;
+        }
     }
 
     @Override
@@ -85,52 +94,89 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
 
     @Override
     public void onExecuteNew(int TYPE) {
-        ar=executeNew(0);
-        imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
-        imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
+        this.TYPE = TYPE;
+
+        new GetImageStatus().execute();
+
     }
 
-    public void showToast() {
-        Toast.makeText(getContext(), "hello", Toast.LENGTH_SHORT).show();
-    }
-
-
-    private class getStatus extends AsyncTask<Void, Void, Void> {
+    public class GetImageStatus extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if (progressBar != null) {
+                progressBar.setVisibility(View.VISIBLE);
+            }
+            if (imageRecyclerView != null) {
+                imageRecyclerView.setVisibility(View.GONE);
+            }
+            if (view != null) {
+                view.setVisibility(View.GONE);
+            }
+        }
 
         @Override
         protected Void doInBackground(Void... voids) {
+            if (ar != null) {
+                ar.clear();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ar = executeNew(TYPE);
+                } else {
+                    ar = executeOld();
+                }
+            }
+            return null;
+        }
 
-            ar.clear();
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ar = executeNew(0);
-            } else {
-                ar = executeOld();
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+
+            if (view != null) {
+                view.setVisibility(View.VISIBLE);
+            }
+            if (imageRecyclerView != null) {
+                imageRecyclerView.setVisibility(View.GONE);
+            }
+            if(progressBar!=null)
+            {
+                progressBar.setVisibility(View.GONE);
             }
 
-            return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            if(progressBar!=null)
-            {
+            if (fragmentTransaction != null && ar != null && ar.size() > 0) {
+                imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
+                if (imageRecyclerViewAdapter != null) {
+                    imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
+                    if (imageRecyclerViewAdapter.getItemCount() == 0) {
+                        if (view != null) {
+                            view.setVisibility(View.VISIBLE);
+                        }
+                        if (imageRecyclerView != null) {
+                            imageRecyclerView.setVisibility(View.GONE);
+                        }
+                    } else {
+                        if (imageRecyclerView != null) {
+                            imageRecyclerView.setVisibility(View.VISIBLE);
+                        }
+                        if (view != null) {
+                            view.setVisibility(View.GONE);
+                        }
+                    }
+                }
+            }
+            if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
-            imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
-            imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
-
-            if (imageRecyclerViewAdapter.getItemCount() == 0) {
-                view.setVisibility(View.VISIBLE);
-            } else {
-                view.setVisibility(View.GONE);
-            }
-
         }
+
     }
 
     public class refresh extends AsyncTask<Void, Void, ArrayList<DocumentFile>> {
-
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -138,8 +184,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             if (imageRecyclerView != null) {
                 imageRecyclerView.setVisibility(View.GONE);
             }
-            if(progressBar!=null)
-            {
+            if (progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
             }
         }
@@ -147,7 +192,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         @Override
         protected ArrayList<DocumentFile> doInBackground(Void... voids) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                return executeNew(0);
+                return executeNew(TYPE);
             } else {
                 return executeOld();
             }
@@ -156,8 +201,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         @Override
         protected void onPostExecute(ArrayList<DocumentFile> newAr) {
             super.onPostExecute(newAr);
-            if(progressBar!=null)
-            {
+            if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
             if (imageRecyclerView != null) {
@@ -199,7 +243,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
     public ArrayList<DocumentFile> executeNew(int TYPE) {
         Log.d(TAG, "executeNew: ");
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();
-         List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
+        List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
 
         if (list.isEmpty()) {
             Log.e(TAG, "No persisted URI permissions found.");
@@ -214,8 +258,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
 
         // Navigate to the WhatsApp Status folder
         DocumentFile whatsappDir;
-        if(TYPE==0)
-        {
+        if (TYPE == 0) {
             whatsappDir = rootDir.findFile("com.whatsapp");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");
@@ -225,7 +268,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
                 Log.e(TAG, "WhatsApp Status directory is null or not a directory.");
                 return imagesList;
             }
-        }else {
+        } else {
             whatsappDir = rootDir.findFile("com.whatsapp.w4b");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp Business");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");

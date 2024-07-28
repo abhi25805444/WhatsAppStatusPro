@@ -4,6 +4,7 @@ import static android.content.ContentValues.TAG;
 
 import static java.security.AccessController.getContext;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -31,10 +32,14 @@ import android.widget.Toast;
 import android.widget.VideoView;
 
 
+import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.OnUserEarnedRewardListener;
+import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -60,9 +65,14 @@ public class ViewVideos extends AppCompatActivity {
     VideoView videoView;
     LinearLayout linearLayout;
 
+    String videoFileName;
+    File picturesDirectory;
+
     private GestureDetector gestureDetector;
     private static final int SWIPE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+
+    boolean isComeFromShare=false;
 
     @Override
     protected void onPause() {
@@ -71,7 +81,6 @@ public class ViewVideos extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        loadAd();
         super.onBackPressed();
     }
     RewardedInterstitialAd rewardedInterstitialAd;
@@ -81,9 +90,30 @@ public class ViewVideos extends AppCompatActivity {
                 new AdRequest.Builder().build(),  new RewardedInterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(RewardedInterstitialAd ad) {
+                        videoView.pause();
                         Log.d(ControlsProviderService.TAG, "Ad was loaded.");
                         rewardedInterstitialAd = ad;
-                        rewardedInterstitialAd.show(ViewVideos.this,null);
+                        rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                super.onAdDismissedFullScreenContent();
+                                doActionAfterAd();
+                                videoView.start();
+                            }
+
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                                super.onAdFailedToShowFullScreenContent(adError);
+                                doActionAfterAd();
+                                videoView.start();
+                            }
+                        });
+                        rewardedInterstitialAd.show(ViewVideos.this, new OnUserEarnedRewardListener() {
+                            @Override
+                            public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
+                                videoView.pause();
+                            }
+                        });
                     }
                     @Override
                     public void onAdFailedToLoad(LoadAdError loadAdError) {
@@ -145,12 +175,12 @@ public class ViewVideos extends AppCompatActivity {
         icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
         btnDownload.setImageDrawable(icon);
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String videoFileName = "Video_" + timeStamp + "_" + new Random().nextInt(1000) + ".mp4";
+        videoFileName = "Video_" + timeStamp + "_" + new Random().nextInt(1000) + ".mp4";
         Intent intent = getIntent();
         imgUri = intent.getStringExtra("seletedfile");
         position = intent.getIntExtra("postionofvideo", 0);
         stringArrayList = intent.getStringArrayListExtra("arraylistofvideos");
-        File picturesDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+        picturesDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
         file = new File[]{new File(imgUri)};
 
 
@@ -192,36 +222,53 @@ public class ViewVideos extends AppCompatActivity {
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                File destinationFile = new File(picturesDirectory, videoFileName);
 
-                try {
-                    Uri uri = Uri.parse(stringArrayList.get(position).toString());
-                    FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
-                    FileOutputStream fos = new FileOutputStream(destinationFile);
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = fis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, length);
+                isComeFromShare=false;
+                Constant.shareCounter++;
+                if(Constant.shareCounter>=3)
+                {
+                    Constant.shareCounter=0;
+                    loadAd();
+                }else {
+                    File destinationFile = new File(picturesDirectory, videoFileName);
+                    try {
+                        Uri uri = Uri.parse(stringArrayList.get(position).toString());
+                        FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
+                        FileOutputStream fos = new FileOutputStream(destinationFile);
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = fis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, length);
+                        }
+                        fis.close();
+                        fos.close();
+                        MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
+                        Toast.makeText(ViewVideos.this, "Saved", Toast.LENGTH_SHORT).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                    fis.close();
-                    fos.close();
-                    MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
-                    Toast.makeText(ViewVideos.this, "Saved", Toast.LENGTH_SHORT).show();
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+
             }
         });
         btnShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                whatsappIntent.setType("image/*");
-                whatsappIntent.setPackage("com.whatsapp");
-                Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
-                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-                startActivity(whatsappIntent);
+                isComeFromShare=true;
+                Constant.shareCounter++;
+                if(Constant.shareCounter>=3)
+                {
+                    Constant.shareCounter=0;
+                    loadAd();
+                }else {
+                    Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                    whatsappIntent.setType("image/*");
+                    whatsappIntent.setPackage("com.whatsapp");
+                    Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
+                    whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                    startActivity(whatsappIntent);
+                }
             }
         });
     }
@@ -256,6 +303,38 @@ public class ViewVideos extends AppCompatActivity {
         file[0] = new File(stringArrayList.get(position));
         imgUri = stringArrayList.get(position);
         videoView.setVideoURI(Uri.parse(stringArrayList.get(position)));
+    }
+
+    public void doActionAfterAd()
+    {
+        if(isComeFromShare)
+        {
+            Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+            whatsappIntent.setType("image/*");
+            whatsappIntent.setPackage("com.whatsapp");
+            Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
+            whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+            startActivity(whatsappIntent);
+        }else {
+            File destinationFile = new File(picturesDirectory, videoFileName);
+            try {
+                Uri uri = Uri.parse(stringArrayList.get(position).toString());
+                FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
+                FileOutputStream fos = new FileOutputStream(destinationFile);
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = fis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, length);
+                }
+                fis.close();
+                fos.close();
+                MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
+                Toast.makeText(ViewVideos.this, "Saved", Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
 

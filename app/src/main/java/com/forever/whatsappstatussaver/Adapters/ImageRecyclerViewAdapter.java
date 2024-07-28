@@ -52,26 +52,25 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
     @Override
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof ImageViewHolder && !isVideoimage) {
-            Glide.with(context).load(arrayList.get(holder.getAdapterPosition()).getUri()).into(((ImageViewHolder) holder).imageView);
 
-            ((ImageViewHolder) holder).imageView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+            ImageViewHolder imageViewHolder= (ImageViewHolder) holder;
+            if(arrayList!=null&&arrayList.size()>0&&imageViewHolder.imageView!=null)
+            {
+                Glide.with(context).load(arrayList.get(holder.getAdapterPosition()).getUri()).into((imageViewHolder.imageView));
+            }
 
-                    Intent intent=new Intent(context,ViewImages.class);
-                    intent.putExtra("seletedfile",(arrayList.get(holder.getAdapterPosition())).getUri().toString());
-                    intent.putExtra("position",holder.getAdapterPosition());
-                    intent.putStringArrayListExtra("arrayofstring",getStringArrayList());
-                    context.startActivity(intent);
-
-
-                }
-            });
-        } else {
-            try {
-                ((ImageViewHolder) holder).imageView.setImageBitmap(getVideoThumbnail(arrayList.get(position).toString()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if(imageViewHolder.imageView!=null)
+            {
+                imageViewHolder.imageView.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent intent=new Intent(context,ViewImages.class);
+                        intent.putExtra("seletedfile",(arrayList.get(holder.getAdapterPosition())).getUri().toString());
+                        intent.putExtra("position",holder.getAdapterPosition());
+                        intent.putStringArrayListExtra("arrayofstring",getStringArrayList());
+                        context.startActivity(intent);
+                    }
+                });
             }
         }
 
