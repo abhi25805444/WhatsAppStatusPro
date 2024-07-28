@@ -2,6 +2,7 @@ package com.forever.whatsappstatussaver;
 
 import static android.content.ContentValues.TAG;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -35,10 +36,14 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 
+import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.OnUserEarnedRewardListener;
+import com.google.android.gms.ads.rewarded.RewardItem;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
 import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -71,28 +76,88 @@ public class ViewImages extends AppCompatActivity {
     File[] file;
     LinearLayout linearLayout;
 
+    File picturesDirectory;
+    String imageFileName;
+
+    boolean isComeFromShare=false;
+    String[] imgUri;
+
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        loadAd();
     }
     RewardedInterstitialAd rewardedInterstitialAd;
     public void loadAd() {
         // Use the test ad unit ID to load an ad.
+
         RewardedInterstitialAd.load(ViewImages.this, getString(R.string.rewardadunit),
                 new AdRequest.Builder().build(),  new RewardedInterstitialAdLoadCallback() {
+
                     @Override
                     public void onAdLoaded(RewardedInterstitialAd ad) {
                         Log.d(ControlsProviderService.TAG, "Ad was loaded.");
                         rewardedInterstitialAd = ad;
-                        rewardedInterstitialAd.show(ViewImages.this,null);
+                        rewardedInterstitialAd.show(ViewImages.this, new OnUserEarnedRewardListener() {
+                            @Override
+                            public void onUserEarnedReward(@NonNull RewardItem rewardItem) {
+                            }
+                        });
+                        rewardedInterstitialAd.setFullScreenContentCallback(new FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                super.onAdDismissedFullScreenContent();
+                                doActionAfterAd();
+                            }
+
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
+                                super.onAdFailedToShowFullScreenContent(adError);
+                                doActionAfterAd();
+                            }
+                        });
                     }
+
                     @Override
                     public void onAdFailedToLoad(LoadAdError loadAdError) {
                         Log.d(ControlsProviderService.TAG, loadAdError.toString());
                         rewardedInterstitialAd = null;
                     }
                 });
+    }
+
+
+    public void doActionAfterAd()
+    {
+        if(isComeFromShare)
+        {
+            Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+            whatsappIntent.setType("image/*");
+            whatsappIntent.setPackage("com.whatsapp");
+            Uri uri = Uri.parse(imgUri[0]);
+            whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+            whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+            whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(whatsappIntent);
+        }else {
+            File destinationFile = new File(picturesDirectory, imageFileName);
+
+            try {
+                Uri uri = Uri.parse(arrayList.get(position).toString());
+                FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
+                FileOutputStream fos = new FileOutputStream(destinationFile);
+                byte[] buffer = new byte[1024];
+                int length;
+                while ((length = fis.read(buffer)) > 0) {
+                    fos.write(buffer, 0, length);
+                }
+                fis.close();
+                fos.close();
+                MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
+                Toast.makeText(ViewImages.this, "Saved", Toast.LENGTH_SHORT).show();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
@@ -125,13 +190,13 @@ public class ViewImages extends AppCompatActivity {
         btnShare = findViewById(R.id.btn_share);
 
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "IMG_" + timeStamp + "_" + new Random().nextInt(1000) + ".jpg";
+        imageFileName = "IMG_" + timeStamp + "_" + new Random().nextInt(1000) + ".jpg";
         btnDownload = findViewById(R.id.btn_download);
-        File picturesDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        picturesDirectory= Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         imageView = findViewById(R.id.img);
         Intent intent = getIntent();
         position = intent.getIntExtra("position", 0);
-        final String[] imgUri = {intent.getStringExtra("seletedfile")};
+         imgUri= new String[]{intent.getStringExtra("seletedfile")};
         Uri imguri = Uri.parse(intent.getStringExtra("seletedfile"));
         arrayList = intent.getStringArrayListExtra("arrayofstring");
         Log.d(TAG, "Position: " + position);
@@ -172,23 +237,31 @@ public class ViewImages extends AppCompatActivity {
             @Override
             public void onClick(View v) {
 
-                File destinationFile = new File(picturesDirectory, imageFileName);
+                isComeFromShare=false;
+                Constant.shareCounter++;
+                if(Constant.shareCounter>=3)
+                {
+                    Constant.shareCounter=0;
+                    loadAd();
+                }else {
+                    File destinationFile = new File(picturesDirectory, imageFileName);
 
-                try {
-                    Uri uri = Uri.parse(arrayList.get(position).toString());
-                    FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
-                    FileOutputStream fos = new FileOutputStream(destinationFile);
-                    byte[] buffer = new byte[1024];
-                    int length;
-                    while ((length = fis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, length);
+                    try {
+                        Uri uri = Uri.parse(arrayList.get(position).toString());
+                        FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
+                        FileOutputStream fos = new FileOutputStream(destinationFile);
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = fis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, length);
+                        }
+                        fis.close();
+                        fos.close();
+                        MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
+                        Toast.makeText(ViewImages.this, "Saved", Toast.LENGTH_SHORT).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-                    fis.close();
-                    fos.close();
-                    MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
-                    Toast.makeText(ViewImages.this, "Saved", Toast.LENGTH_SHORT).show();
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
             }
         });
@@ -196,14 +269,22 @@ public class ViewImages extends AppCompatActivity {
         btnShare.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                whatsappIntent.setType("image/*");
-                whatsappIntent.setPackage("com.whatsapp");
-                Uri uri = Uri.parse(imgUri[0]);
-                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                startActivity(whatsappIntent);
+                isComeFromShare=true;
+                Constant.shareCounter++;
+                if(Constant.shareCounter>=3)
+                {
+                    Constant.shareCounter=0;
+                    loadAd();
+                }else {
+                    Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                    whatsappIntent.setType("image/*");
+                    whatsappIntent.setPackage("com.whatsapp");
+                    Uri uri = Uri.parse(imgUri[0]);
+                    whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                    whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(whatsappIntent);
+                }
             }
         });
 

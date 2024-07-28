@@ -4,14 +4,11 @@ import static android.service.controls.ControlsProviderService.TAG;
 
 import android.content.Context;
 import android.content.UriPermission;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
-import androidx.core.content.ContextCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -19,42 +16,33 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Environment;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
-import android.widget.RelativeLayout;
-import android.widget.Toast;
 
-import com.forever.whatsappstatussaver.Adapters.ImageRecyclerViewAdapter;
 import com.forever.whatsappstatussaver.Adapters.VideoRecylerviewAdapter;
-import com.forever.whatsappstatussaver.Interface.RefreshInterface;
 import com.forever.whatsappstatussaver.Interface.VideoRefreshInterface;
-import com.forever.whatsappstatussaver.Model.Status;
 import com.forever.whatsappstatussaver.R;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 
 public class videolistFragment extends Fragment implements VideoRefreshInterface {
 
     RecyclerView recyclerView;
-    ArrayList<File> arrayofVideo = new ArrayList<>();
     int sizeofArray;
 
     ArrayList<DocumentFile> ar = new ArrayList();
     VideoRecylerviewAdapter videoRecylerviewAdapter;
     View view;
-    private ProgressBar progressBar;
+    ProgressBar progressBar;
+
+    int TYPE = 0;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -68,10 +56,9 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
 
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         HomeFragment homeFragment = (HomeFragment) fragmentManager.findFragmentById(R.id.container);
-        homeFragment.setVideoRefreshInterface(this);
-
-
-        new MyAsyncTask().execute();
+        if (homeFragment != null) {
+            homeFragment.setVideoRefreshInterface(this);
+        }
 
         return root;
     }
@@ -83,26 +70,52 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
 
     @Override
     public void onExecuteNew(int TYPE) {
-        ar=executeNew(TYPE);
-
-        Log.d(TAG, "onExecuteNew: ar "+ar.size());
-        videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
-        recyclerView.setAdapter(videoRecylerviewAdapter);
+        this.TYPE = TYPE;
+        new GetStatusVideo().execute();
     }
 
 
-    private class MyAsyncTask extends AsyncTask<Void, Void, Void> {
+    public class GetStatusVideo extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if (progressBar != null) {
+                progressBar.setVisibility(View.VISIBLE);
+            }
+            if (view != null) {
+                view.setVisibility(View.GONE);
+            }
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.GONE);
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+            if (view != null) {
+                view.setVisibility(View.VISIBLE);
+            }
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.GONE);
+            }
+            if(progressBar!=null)
+            {
+                progressBar.setVisibility(View.GONE);
+            }
+        }
+
         @Override
         protected Void doInBackground(Void... voids) {
-            ar.clear();
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            {
-                ar = executeNew(0);
-            }else {
-                ar = executeOld();
+
+            if (ar != null) {
+                ar.clear();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ar = executeNew(TYPE);
+                } else {
+                    ar = executeOld();
+                }
             }
-
-
             return null;
         }
 
@@ -114,16 +127,18 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            progressBar.setVisibility(View.GONE);
-            videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
-            recyclerView.setAdapter(videoRecylerviewAdapter);
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            {
-                sizeofArray = executeNew(0).size();
-            }else {
+            if (progressBar != null) {
+                progressBar.setVisibility(View.GONE);
+            }
+            if (ar != null && ar.size() > 0) {
+                videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
+                recyclerView.setAdapter(videoRecylerviewAdapter);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                sizeofArray = executeNew(TYPE).size();
+            } else {
                 sizeofArray = executeOld().size();
             }
-
             updateEmptyViewVisibility();
         }
     }
@@ -133,22 +148,37 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             @Override
             protected void onPreExecute() {
                 super.onPreExecute();
-                if(recyclerView!=null)
-                {
+                if (recyclerView != null) {
                     recyclerView.setVisibility(View.GONE);
                 }
-                if(progressBar!=null)
-                {
+                if (view != null) {
+                    view.setVisibility(View.GONE);
+                }
+                if (progressBar != null) {
                     progressBar.setVisibility(View.VISIBLE);
                 }
             }
 
             @Override
-            protected ArrayList<DocumentFile> doInBackground(Void... voids) {
-                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            protected void onCancelled() {
+                super.onCancelled();
+                if (view != null) {
+                    view.setVisibility(View.VISIBLE);
+                }
+                if (recyclerView != null) {
+                    recyclerView.setVisibility(View.GONE);
+                }
+                if(progressBar!=null)
                 {
-                    return executeNew(0);
-                }else {
+                    progressBar.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            protected ArrayList<DocumentFile> doInBackground(Void... voids) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    return executeNew(TYPE);
+                } else {
                     return executeOld();
                 }
 
@@ -158,8 +188,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             protected void onPostExecute(ArrayList<DocumentFile> newAr) {
                 super.onPostExecute(newAr);
                 progressBar.setVisibility(View.GONE);
-                if(recyclerView!=null)
-                {
+                if (recyclerView != null) {
                     recyclerView.setVisibility(View.VISIBLE);
                 }
                 if (newAr != null) {
@@ -208,8 +237,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
         // Navigate to the WhatsApp Status folder
         DocumentFile whatsappDir;
 
-        if(TYPE==0)
-        {
+        if (TYPE == 0) {
             whatsappDir = rootDir.findFile("com.whatsapp");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");
@@ -219,8 +247,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                 Log.e(TAG, "WhatsApp Status directory is null or not a directory.");
                 return videosList;
             }
-        }
-        else {
+        } else {
             whatsappDir = rootDir.findFile("com.whatsapp.w4b");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("WhatsApp Business");
             if (whatsappDir != null) whatsappDir = whatsappDir.findFile("Media");
@@ -250,7 +277,8 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
 
         File[] statusFiles;
         statusFiles = new File(Environment.getExternalStorageDirectory() +
-                File.separator + "WhatsApp/Media/.Statuses").listFiles();;
+                File.separator + "WhatsApp/Media/.Statuses").listFiles();
+        ;
         imagesList.clear();
 
         if (statusFiles != null && statusFiles.length > 0) {
@@ -260,17 +288,17 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
 
                 if (file.getName().contains(".nomedia"))
                     continue;
-                if(file.getName().contains(".mp4"))
-                {
-                    imagesList.add(convertFileToDocumentFile(getContext(),file));
+                if (file.getName().contains(".mp4")) {
+                    imagesList.add(convertFileToDocumentFile(getContext(), file));
                 }
 
-                Log.d(TAG, "executeOld: "+file.getName());
+                Log.d(TAG, "executeOld: " + file.getName());
             }
         }
         return imagesList;
 
     }
+
     public static DocumentFile convertFileToDocumentFile(Context context, File file) {
         // First, get the URI of the file
         Uri fileUri = Uri.fromFile(file);
@@ -288,9 +316,19 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
 
     private void updateEmptyViewVisibility() {
         if (videoRecylerviewAdapter.getItemCount() == 0) {
-            view.setVisibility(View.VISIBLE);
+            if (view != null) {
+                view.setVisibility(View.VISIBLE);
+            }
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.GONE);
+            }
         } else {
-            view.setVisibility(View.GONE);
+            if (view != null) {
+                view.setVisibility(View.GONE);
+            }
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.VISIBLE);
+            }
         }
     }
 }

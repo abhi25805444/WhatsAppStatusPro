@@ -65,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         if (!isFirsttime) {
-            loadAd();
+            /*loadAd();*/
         }
 
 
