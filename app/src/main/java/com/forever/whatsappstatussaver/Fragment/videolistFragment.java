@@ -99,7 +99,8 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             if (recyclerView != null) {
                 recyclerView.setVisibility(View.GONE);
             }
-            if (progressBar != null) {
+            if(progressBar!=null)
+            {
                 progressBar.setVisibility(View.GONE);
             }
         }
@@ -112,7 +113,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ar = executeNew(TYPE);
                 } else {
-                    ar = executeOld();
+                    ar = executeOld(TYPE);
                 }
             }
             return null;
@@ -132,11 +133,18 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             if (ar != null && ar.size() > 0) {
                 videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
                 recyclerView.setAdapter(videoRecylerviewAdapter);
+            }else {
+                if (view != null) {
+                    view.setVisibility(View.VISIBLE);
+                }
+                if (recyclerView != null) {
+                    recyclerView.setVisibility(View.GONE);
+                }
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 sizeofArray = executeNew(TYPE).size();
             } else {
-                sizeofArray = executeOld().size();
+                sizeofArray = executeOld(TYPE).size();
             }
             updateEmptyViewVisibility();
         }
@@ -167,7 +175,8 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                 if (recyclerView != null) {
                     recyclerView.setVisibility(View.GONE);
                 }
-                if (progressBar != null) {
+                if(progressBar!=null)
+                {
                     progressBar.setVisibility(View.GONE);
                 }
             }
@@ -177,7 +186,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     return executeNew(TYPE);
                 } else {
-                    return executeOld();
+                    return executeOld(TYPE);
                 }
 
             }
@@ -185,9 +194,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             @Override
             protected void onPostExecute(ArrayList<DocumentFile> newAr) {
                 super.onPostExecute(newAr);
-                if(progressBar!=null){
-                    progressBar.setVisibility(View.GONE);
-                }
+                progressBar.setVisibility(View.GONE);
                 if (recyclerView != null) {
                     recyclerView.setVisibility(View.VISIBLE);
                 }
@@ -195,9 +202,14 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                     if (!areArrayListsEqual(ar, newAr)) { // Check if the new list is different
                         ar.clear();
                         ar.addAll(newAr);
-                        if(videoRecylerviewAdapter!=null){
+                        if(videoRecylerviewAdapter!=null)
+                        {
                             videoRecylerviewAdapter.notifyDataSetChanged();
+                        }else {
+                            videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
+                            recyclerView.setAdapter(videoRecylerviewAdapter);
                         }
+
                         sizeofArray = ar.size();
                         updateEmptyViewVisibility();
                     } else {
@@ -273,13 +285,20 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
         return videosList;
     }
 
-    private ArrayList<DocumentFile> executeOld() {
+    private ArrayList<DocumentFile> executeOld(int TYPE) {
 
         final ArrayList<androidx.documentfile.provider.DocumentFile> imagesList = new ArrayList<>();
 
         File[] statusFiles;
-        statusFiles = new File(Environment.getExternalStorageDirectory() +
-                File.separator + "WhatsApp/Media/.Statuses").listFiles();
+
+        if(TYPE==0)
+        {
+            statusFiles = new File(Environment.getExternalStorageDirectory() +
+                    File.separator + "WhatsApp/Media/.Statuses").listFiles();
+        }else {
+            statusFiles = new File(Environment.getExternalStorageDirectory() +
+                    File.separator + "WhatsApp Business/Media/.Statuses").listFiles();
+        }
         ;
         imagesList.clear();
 
@@ -317,7 +336,8 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
     }
 
     private void updateEmptyViewVisibility() {
-        if(videoRecylerviewAdapter!=null){
+        if(videoRecylerviewAdapter!=null)
+        {
             if (videoRecylerviewAdapter.getItemCount() == 0) {
                 if (view != null) {
                     view.setVisibility(View.VISIBLE);
@@ -334,5 +354,6 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                 }
             }
         }
+
     }
 }

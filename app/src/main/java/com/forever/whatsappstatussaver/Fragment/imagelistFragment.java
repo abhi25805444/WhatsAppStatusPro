@@ -43,7 +43,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
     ImageRecyclerViewAdapter imageRecyclerViewAdapter;
     FragmentTransaction fragmentTransaction;
     ArrayList<DocumentFile> ar = new ArrayList();
-    View view;
+    public View view;
     public ProgressBar progressBar;
     static boolean isRefreshClick = false;
     int TYPE;
@@ -122,9 +122,10 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     ar = executeNew(TYPE);
                 } else {
-                    ar = executeOld();
+                    ar = executeOld(TYPE);
                 }
             }
+
             return null;
         }
 
@@ -168,6 +169,13 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
                         }
                     }
                 }
+            }else {
+                if (view != null) {
+                    view.setVisibility(View.VISIBLE);
+                }
+                if (imageRecyclerView != null) {
+                    imageRecyclerView.setVisibility(View.GONE);
+                }
             }
             if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
@@ -194,7 +202,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 return executeNew(TYPE);
             } else {
-                return executeOld();
+                return executeOld(TYPE);
             }
         }
 
@@ -207,14 +215,21 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             if (imageRecyclerView != null) {
                 imageRecyclerView.setVisibility(View.VISIBLE);
             }
-
-            if (newAr != null && !areArrayListsEqual(ar, newAr)) { // Check if the new list is different
-                ar.clear(); // Clear existing data
-                ar.addAll(newAr); // Update with new data
-                if(imageRecyclerViewAdapter!=null){
+            if (newAr != null && !areArrayListsEqual(ar, newAr)) {
+                // Check if the new list is different
+                if(ar!=null&&imageRecyclerViewAdapter!=null)
+                {
+                    ar.clear(); // Clear existing data
+                    ar.addAll(newAr); // Update with new data
                     imageRecyclerViewAdapter.notifyDataSetChanged(); // Notify adapter
+                    updateEmptyViewVisibility();
+                }else {
+                    ar.clear(); // Clear existing data
+                    ar.addAll(newAr);
+                    imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
+                    imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
+                    updateEmptyViewVisibility();
                 }
-                updateEmptyViewVisibility();
             }
 
             isRefreshClick = false; // Reset refresh state
@@ -222,16 +237,10 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
     }
 
     private void updateEmptyViewVisibility() {
-        if(imageRecyclerViewAdapter!= null){
-            if (imageRecyclerViewAdapter.getItemCount() == 0) {
-                if(view!=null){
-                    view.setVisibility(View.VISIBLE);
-                }
-            } else {
-                if(view!=null){
-                    view.setVisibility(View.GONE);
-                }
-            }
+        if (imageRecyclerViewAdapter.getItemCount() == 0) {
+            view.setVisibility(View.VISIBLE);
+        } else {
+            view.setVisibility(View.GONE);
         }
     }
 
@@ -258,7 +267,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             return imagesList;
         }
 
-        DocumentFile rootDir = DocumentFile.fromTreeUri(getContext(), list.get(0).getUri());
+        DocumentFile rootDir = DocumentFile.fromTreeUri(requireActivity(), list.get(0).getUri());
         if (rootDir == null || !rootDir.isDirectory()) {
             Log.e(TAG, "Root directory is null or not a directory.");
             return imagesList;
@@ -304,13 +313,19 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         return imagesList;
     }
 
-    private ArrayList<DocumentFile> executeOld() {
+    public ArrayList<DocumentFile> executeOld(int TYPE) {
 
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();
 
         File[] statusFiles;
-        statusFiles = new File(Environment.getExternalStorageDirectory() +
-                File.separator + "WhatsApp/Media/.Statuses").listFiles();
+        if(TYPE==0)
+        {
+            statusFiles = new File(Environment.getExternalStorageDirectory() +
+                    File.separator + "WhatsApp/Media/.Statuses").listFiles();
+        }else {
+            statusFiles = new File(Environment.getExternalStorageDirectory() +
+                    File.separator + "WhatsApp Business/Media/.Statuses").listFiles();
+        }
         ;
         imagesList.clear();
 
