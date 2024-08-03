@@ -90,7 +90,13 @@ public class PermisionFragment extends Fragment {
                 textView2.setText("2. Click on Allow >");
             }
         } else {
-            showHomeFrag();
+            if(isWhatsAppInstalled())
+            {
+                showHomeFrag();
+            }else {
+                Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
+            }
+
         }
 
         btnPermision = root.findViewById(R.id.btnpermision);
@@ -105,13 +111,33 @@ public class PermisionFragment extends Fragment {
                     }
                     requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
                 } else {
-                    showHomeFrag();
+                    if(isWhatsAppInstalled())
+                    {
+                        showHomeFrag();
+                    }else {
+                        Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
+                    }
+
                 }
+
+
+
 
             }
         });
 
         return root;
+    }
+
+    public boolean isWhatsAppInstalled() {
+
+        PackageManager packageManager = getActivity().getPackageManager();
+        try {
+            packageManager.getPackageInfo("com.whatsapp", PackageManager.GET_ACTIVITIES);
+            return true; // WhatsApp Business is installed
+        } catch (PackageManager.NameNotFoundException e) {
+            return false; // WhatsApp Business is not installed
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
