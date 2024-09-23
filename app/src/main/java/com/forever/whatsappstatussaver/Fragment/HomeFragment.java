@@ -31,6 +31,7 @@ import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.forever.whatsappstatussaver.Constant;
 import com.forever.whatsappstatussaver.Interface.RefreshInterface;
 import com.forever.whatsappstatussaver.Interface.VideoRefreshInterface;
 import com.forever.whatsappstatussaver.MainActivity;
@@ -76,35 +77,77 @@ public class HomeFragment extends Fragment {
         linearLayout = root.findViewById(R.id.adView);
         btnNoAds = root.findViewById(R.id.noadsicon);
         btn_refresh = root.findViewById(R.id.btn_refresh);
-        AdView adView = new AdView(getActivity());
-        adView.setAdSize(getAdSize());
-        adView.setAdUnitId(getString(R.string.banneradunit));
-        linearLayout.removeAllViews();
-        linearLayout.addView(adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        adView.loadAd(adRequest);
+        if(Constant.is_ad_enable){
+            AdView adView = new AdView(getActivity());
+            adView.setAdSize(getAdSize());
+            adView.setAdUnitId(getString(R.string.banneradunit));
+            linearLayout.removeAllViews();
+            linearLayout.addView(adView);
+            AdRequest adRequest = new AdRequest.Builder().build();
+            adView.loadAd(adRequest);
+
+            adView.setAdListener(new AdListener() {
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                }
+
+                @Override
+                public void onAdClosed() {
+                    super.onAdClosed();
+                }
+
+                @Override
+                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                    super.onAdFailedToLoad(loadAdError);
+                    Log.d(TAG, "onAdFailedToLoad: " + loadAdError.toString());
+                }
+
+                @Override
+                public void onAdImpression() {
+                    super.onAdImpression();
+                }
+
+                @Override
+                public void onAdLoaded() {
+                    Log.d(TAG, "onAdLoaded: ");
+                    super.onAdLoaded();
+                }
+
+                @Override
+                public void onAdOpened() {
+                    Log.d(TAG, "onAdOpened: ");
+                    super.onAdOpened();
+                }
+
+                @Override
+                public void onAdSwipeGestureClicked() {
+                    super.onAdSwipeGestureClicked();
+                }
+            });
+        }
         char c = '1';
         Log.d(TAG, "onCreateView: Tag of frag " + getTag());
 
+        if (btn_refresh != null) {
+            btn_refresh.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
 
-        btn_refresh.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                Log.d(TAG, "onClick: (((((((((((((((((( 1");
-                if (refreshInterface != null) {
                     Log.d(TAG, "onClick: (((((((((((((((((( 1");
-                    refreshInterface.onRefreshImage();
+                    if (refreshInterface != null) {
+                        Log.d(TAG, "onClick: (((((((((((((((((( 1");
+                        refreshInterface.onRefreshImage();
+                    }
+
+                    if (videoRefreshInterface != null) {
+                        videoRefreshInterface.onRefreshVideo();
+                    }
+
+
                 }
-
-                if (videoRefreshInterface != null) {
-                    videoRefreshInterface.onRefreshVideo();
-                }
-
-
-            }
-        });
-
+            });
+        }
 
         String[] options = {"WHATSAPP", "WHATSAPP BUSINESS"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), R.layout.spinner_item_layout, options);
@@ -112,30 +155,38 @@ public class HomeFragment extends Fragment {
 
         Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.plus);
         btnNoAds.startAnimation(animation);
-
-
-        spinner.setAdapter(adapter);
-
+        if (adapter != null) {
+            spinner.setAdapter(adapter);
+        }
 
         if (spinner != null) {
             spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     if (position == WHATSAPPBUSINES) {
-
                         boolean isWhatsAppBusinessInstalled = isWhatsAppBusinessInstalled();
                         if (isWhatsAppBusinessInstalled) {
-                            refreshInterface.onExecuteNew(WHATSAPPBUSINES);
-                            videoRefreshInterface.onExecuteNew(WHATSAPPBUSINES);
+                            if(refreshInterface!=null){
+                                refreshInterface.onExecuteNew(WHATSAPPBUSINES);
+                            }
+                            if(videoRefreshInterface!=null){
+                                videoRefreshInterface.onExecuteNew(WHATSAPPBUSINES);
+                            }
                             // WhatsApp Business is installed
                         } else {
                             Toast.makeText(getActivity(), "Please Install WhatsApp Business App ", Toast.LENGTH_SHORT).show();
-                            spinner.setSelection(WHATSAPP);
+                            if(spinner!=null){
+                                spinner.setSelection(WHATSAPP);
+                            }
                             // WhatsApp Business is not installed
                         }
                     } else if (position == WHATSAPP) {
-                        refreshInterface.onExecuteNew(WHATSAPP);
-                        videoRefreshInterface.onExecuteNew(WHATSAPP);
+                        if (refreshInterface != null) {
+                            refreshInterface.onExecuteNew(WHATSAPP);
+                        }
+                        if (videoRefreshInterface != null) {
+                            videoRefreshInterface.onExecuteNew(WHATSAPP);
+                        }
                     }
                 }
 
@@ -145,49 +196,12 @@ public class HomeFragment extends Fragment {
                 }
             });
         }
-        adView.setAdListener(new AdListener() {
-            @Override
-            public void onAdClicked() {
-                super.onAdClicked();
-            }
 
-            @Override
-            public void onAdClosed() {
-                super.onAdClosed();
-            }
-
-            @Override
-            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                super.onAdFailedToLoad(loadAdError);
-                Log.d(TAG, "onAdFailedToLoad: " + loadAdError.toString());
-            }
-
-            @Override
-            public void onAdImpression() {
-                super.onAdImpression();
-            }
-
-            @Override
-            public void onAdLoaded() {
-                Log.d(TAG, "onAdLoaded: ");
-                super.onAdLoaded();
-            }
-
-            @Override
-            public void onAdOpened() {
-                Log.d(TAG, "onAdOpened: ");
-                super.onAdOpened();
-            }
-
-            @Override
-            public void onAdSwipeGestureClicked() {
-                super.onAdSwipeGestureClicked();
-            }
-        });
         viewPager = root.findViewById(R.id.viewPager);
         viewpagerAdapter = new viewpagerAdapter(getActivity().getSupportFragmentManager());
-
-        viewPager.setAdapter(viewpagerAdapter);
+        if (viewpagerAdapter != null) {
+            viewPager.setAdapter(viewpagerAdapter);
+        }
         tabLayout.setupWithViewPager(viewPager);
 
 
@@ -196,32 +210,6 @@ public class HomeFragment extends Fragment {
         }*/
         // Inflate the layout for this fragment
         return root;
-    }
-
-    private void showBottomSheetDialog() {
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(getContext(), R.style.SheetDialog);
-        View bottomSheetView = LayoutInflater.from(getContext()).inflate(R.layout.wb_storage_permission, null);
-        Button btnpermision = bottomSheetView.findViewById(R.id.btnpermision);
-        if (btnpermision != null) {
-            btnpermision.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                  /*  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
-                        // If Android 10+
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            requestPermissionQ();
-                        }
-                    } else {
-                       //todo close bottomsheet
-                    }*/
-                }
-            });
-        }
-        bottomSheetDialog.setContentView(bottomSheetView);
-        BottomSheetBehavior behavior = bottomSheetDialog.getBehavior();
-        behavior.setDraggable(false);
-        bottomSheetDialog.setCanceledOnTouchOutside(false);
-        bottomSheetDialog.show();
     }
 
     private AdSize getAdSize() {

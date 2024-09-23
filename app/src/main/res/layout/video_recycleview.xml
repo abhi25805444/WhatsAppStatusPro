@@ -8,6 +8,7 @@
     <ImageView
         android:layout_margin="10dp"
         android:id="@+id/img1"
+        android:transitionName="sharedImage"
         android:layout_width="150dp"
         android:layout_height="150dp"/>
 </androidx.cardview.widget.CardView>

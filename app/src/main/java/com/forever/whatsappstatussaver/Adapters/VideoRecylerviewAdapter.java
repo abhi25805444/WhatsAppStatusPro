@@ -1,5 +1,6 @@
 package com.forever.whatsappstatussaver.Adapters;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -10,6 +11,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.view.ViewCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -54,8 +57,11 @@ public class VideoRecylerviewAdapter extends RecyclerView.Adapter{
                 intent.putExtra("seletedfile",(fileArrayList.get(holder.getAdapterPosition())).getUri().toString());
                 intent.putStringArrayListExtra("arraylistofvideos",getStringArrayList());
                 intent.putExtra("postionofvideo",holder.getAdapterPosition());
-    
-                context.startActivity(intent);
+
+                ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        (Activity) context,((videoViewHolder) holder).imageView, ViewCompat.getTransitionName(((videoViewHolder) holder).imageView));
+
+                context.startActivity(intent, options.toBundle());
             }
         });
 
