@@ -12,6 +12,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.view.ViewCompat;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -68,7 +70,12 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
                         intent.putExtra("seletedfile",(arrayList.get(holder.getAdapterPosition())).getUri().toString());
                         intent.putExtra("position",holder.getAdapterPosition());
                         intent.putStringArrayListExtra("arrayofstring",getStringArrayList());
-                        context.startActivity(intent);
+
+
+                        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                                (Activity) context, ((ImageViewHolder) holder).imageView, ViewCompat.getTransitionName(((ImageViewHolder) holder).imageView));
+
+                        context.startActivity(intent, options.toBundle());
                     }
                 });
             }

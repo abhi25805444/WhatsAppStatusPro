@@ -99,8 +99,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             if (recyclerView != null) {
                 recyclerView.setVisibility(View.GONE);
             }
-            if(progressBar!=null)
-            {
+            if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
         }
@@ -168,8 +167,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                 if (recyclerView != null) {
                     recyclerView.setVisibility(View.GONE);
                 }
-                if(progressBar!=null)
-                {
+                if (progressBar != null) {
                     progressBar.setVisibility(View.GONE);
                 }
             }
@@ -187,7 +185,9 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             @Override
             protected void onPostExecute(ArrayList<DocumentFile> newAr) {
                 super.onPostExecute(newAr);
-                progressBar.setVisibility(View.GONE);
+                if(progressBar!=null){
+                    progressBar.setVisibility(View.GONE);
+                }
                 if (recyclerView != null) {
                     recyclerView.setVisibility(View.VISIBLE);
                 }
@@ -195,7 +195,9 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
                     if (!areArrayListsEqual(ar, newAr)) { // Check if the new list is different
                         ar.clear();
                         ar.addAll(newAr);
-                        videoRecylerviewAdapter.notifyDataSetChanged();
+                        if(videoRecylerviewAdapter!=null){
+                            videoRecylerviewAdapter.notifyDataSetChanged();
+                        }
                         sizeofArray = ar.size();
                         updateEmptyViewVisibility();
                     } else {
@@ -315,19 +317,21 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
     }
 
     private void updateEmptyViewVisibility() {
-        if (videoRecylerviewAdapter.getItemCount() == 0) {
-            if (view != null) {
-                view.setVisibility(View.VISIBLE);
-            }
-            if (recyclerView != null) {
-                recyclerView.setVisibility(View.GONE);
-            }
-        } else {
-            if (view != null) {
-                view.setVisibility(View.GONE);
-            }
-            if (recyclerView != null) {
-                recyclerView.setVisibility(View.VISIBLE);
+        if(videoRecylerviewAdapter!=null){
+            if (videoRecylerviewAdapter.getItemCount() == 0) {
+                if (view != null) {
+                    view.setVisibility(View.VISIBLE);
+                }
+                if (recyclerView != null) {
+                    recyclerView.setVisibility(View.GONE);
+                }
+            } else {
+                if (view != null) {
+                    view.setVisibility(View.GONE);
+                }
+                if (recyclerView != null) {
+                    recyclerView.setVisibility(View.VISIBLE);
+                }
             }
         }
     }

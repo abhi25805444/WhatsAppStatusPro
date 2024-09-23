@@ -1,9 +1,5 @@
 package com.forever.whatsappstatussaver;
 
-import static android.content.ContentValues.TAG;
-
-import static java.security.AccessController.getContext;
-
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -25,7 +21,6 @@ import android.view.Display;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
 import android.widget.Toast;
@@ -57,13 +52,16 @@ import java.util.Random;
 
 public class ViewVideos extends AppCompatActivity {
     FloatingActionButton btnDownload;
-    FloatingActionButton btnShare;
+    FloatingActionButton btnWhatsappShare;
     int position;
     String imgUri;
     ArrayList<String> stringArrayList;
     File[] file;
     VideoView videoView;
     LinearLayout linearLayout;
+    FloatingActionButton btnSharall;
+    final long CLICK_DELAY = 2000; // 1 second
+    long lastClickTime = 0;
 
     String videoFileName;
     File picturesDirectory;
@@ -72,7 +70,8 @@ public class ViewVideos extends AppCompatActivity {
     private static final int SWIPE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
 
-    boolean isComeFromShare=false;
+    boolean isComeFromShare = false;
+    boolean isComeFromWahtsappShare = false;
 
     @Override
     protected void onPause() {
@@ -83,11 +82,13 @@ public class ViewVideos extends AppCompatActivity {
     public void onBackPressed() {
         super.onBackPressed();
     }
+
     RewardedInterstitialAd rewardedInterstitialAd;
+
     public void loadAd() {
         // Use the test ad unit ID to load an ad.
         RewardedInterstitialAd.load(ViewVideos.this, getString(R.string.rewardadunit),
-                new AdRequest.Builder().build(),  new RewardedInterstitialAdLoadCallback() {
+                new AdRequest.Builder().build(), new RewardedInterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(RewardedInterstitialAd ad) {
                         videoView.pause();
@@ -115,10 +116,12 @@ public class ViewVideos extends AppCompatActivity {
                             }
                         });
                     }
+
                     @Override
                     public void onAdFailedToLoad(LoadAdError loadAdError) {
                         Log.d(ControlsProviderService.TAG, loadAdError.toString());
                         rewardedInterstitialAd = null;
+                        doActionAfterAd();
                     }
                 });
     }
@@ -145,17 +148,18 @@ public class ViewVideos extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if(Build.VERSION.SDK_INT>=24){
-            try{
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
                 Method m = StrictMode.class.getMethod("disableDeathOnFileUriExposure");
                 m.invoke(null);
-            }catch(Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         setContentView(R.layout.activity_view_videos);
 
-        linearLayout=findViewById(R.id.adView);
+        linearLayout = findViewById(R.id.adView);
+        btnSharall = findViewById(R.id.shareall);
 
         AdView adView = new AdView(getApplicationContext());
         adView.setAdSize(getAdSize());
@@ -166,14 +170,18 @@ public class ViewVideos extends AppCompatActivity {
         adView.loadAd(adRequest);
         videoView = findViewById(R.id.videoView);
         btnDownload = findViewById(R.id.btn_download);
-        btnShare = findViewById(R.id.btn_share);
+        btnWhatsappShare = findViewById(R.id.btn_share);
 
-        Drawable icon = btnShare.getDrawable();
+        Drawable icon = btnWhatsappShare.getDrawable();
         icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
-        btnShare.setImageDrawable(icon);
+        btnWhatsappShare.setImageDrawable(icon);
         icon = btnDownload.getDrawable();
         icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
-        btnDownload.setImageDrawable(icon);
+
+        icon = btnSharall.getDrawable();
+        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+        btnSharall.setImageDrawable(icon);
+
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         videoFileName = "Video_" + timeStamp + "_" + new Random().nextInt(1000) + ".mp4";
         Intent intent = getIntent();
@@ -217,60 +225,97 @@ public class ViewVideos extends AppCompatActivity {
         });
 
 
-
-
         btnDownload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                isComeFromShare=false;
-                Constant.shareCounter++;
-                if(Constant.shareCounter>=3)
-                {
-                    Constant.shareCounter=0;
-                    loadAd();
-                }else {
-                    File destinationFile = new File(picturesDirectory, videoFileName);
-                    try {
-                        Uri uri = Uri.parse(stringArrayList.get(position).toString());
-                        FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
-                        FileOutputStream fos = new FileOutputStream(destinationFile);
-                        byte[] buffer = new byte[1024];
-                        int length;
-                        while ((length = fis.read(buffer)) > 0) {
-                            fos.write(buffer, 0, length);
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastClickTime >= CLICK_DELAY) {
+                    lastClickTime = currentTime;
+                    isComeFromShare = false;
+                    Constant.shareCounter++;
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable) {
+                        Constant.shareCounter = 0;
+                        loadAd();
+                    } else {
+                        File destinationFile = new File(picturesDirectory, videoFileName);
+                        try {
+                            Uri uri = Uri.parse(stringArrayList.get(position).toString());
+                            FileInputStream fis = (FileInputStream) getApplicationContext().getContentResolver().openInputStream(uri);
+                            FileOutputStream fos = new FileOutputStream(destinationFile);
+                            byte[] buffer = new byte[1024];
+                            int length;
+                            while ((length = fis.read(buffer)) > 0) {
+                                fos.write(buffer, 0, length);
+                            }
+                            fis.close();
+                            fos.close();
+                            MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
+                            Toast.makeText(ViewVideos.this, "Saved", Toast.LENGTH_SHORT).show();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                        fis.close();
-                        fos.close();
-                        MediaScannerConnection.scanFile(getApplicationContext(), new String[]{destinationFile.getAbsolutePath()}, null, null);
-                        Toast.makeText(ViewVideos.this, "Saved", Toast.LENGTH_SHORT).show();
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                    }
+                }
+
+
+
+            }
+        });
+
+        btnSharall.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                isComeFromShare = true;long currentTime = System.currentTimeMillis();
+                if (currentTime - lastClickTime >= CLICK_DELAY) {
+                    lastClickTime = currentTime;
+                    isComeFromWahtsappShare = false;
+                    Constant.shareCounter++;
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable) {
+                        Constant.shareCounter = 0;
+                        loadAd();
+                    } else {
+
+                        Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                        whatsappIntent.setType("video/*");  // Change to video MIME type
+                        Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));  // Assuming videoUri contains your video file path
+                        whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                        whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                        whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(whatsappIntent);
+                    }
+                }
+            }
+        });
+
+        btnWhatsappShare.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastClickTime >= CLICK_DELAY) {
+                    lastClickTime = currentTime;
+                    isComeFromShare = true;
+                    isComeFromWahtsappShare = true;
+                    Constant.shareCounter++;
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable) {
+                        Constant.shareCounter = 0;
+                        loadAd();
+                    } else {
+                        Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                        whatsappIntent.setType("image/*");
+                        whatsappIntent.setPackage("com.whatsapp");
+                        Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
+                        whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                        whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                        startActivity(whatsappIntent);
                     }
                 }
 
             }
         });
-        btnShare.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                isComeFromShare=true;
-                Constant.shareCounter++;
-                if(Constant.shareCounter>=3)
-                {
-                    Constant.shareCounter=0;
-                    loadAd();
-                }else {
-                    Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                    whatsappIntent.setType("image/*");
-                    whatsappIntent.setPackage("com.whatsapp");
-                    Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
-                    whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                    whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-                    startActivity(whatsappIntent);
-                }
-            }
-        });
+
+
     }
 
     @Override
@@ -305,18 +350,26 @@ public class ViewVideos extends AppCompatActivity {
         videoView.setVideoURI(Uri.parse(stringArrayList.get(position)));
     }
 
-    public void doActionAfterAd()
-    {
-        if(isComeFromShare)
-        {
-            Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-            whatsappIntent.setType("image/*");
-            whatsappIntent.setPackage("com.whatsapp");
-            Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
-            whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-            whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-            startActivity(whatsappIntent);
-        }else {
+    public void doActionAfterAd() {
+        if (isComeFromShare) {
+            if (isComeFromWahtsappShare) {
+                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                whatsappIntent.setType("image/*");
+                whatsappIntent.setPackage("com.whatsapp");
+                Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
+                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                startActivity(whatsappIntent);
+            }else {
+                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                whatsappIntent.setType("video/*");  // Change to video MIME type
+                Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));  // Assuming videoUri contains your video file path
+                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                startActivity(whatsappIntent);
+            }
+        } else {
             File destinationFile = new File(picturesDirectory, videoFileName);
             try {
                 Uri uri = Uri.parse(stringArrayList.get(position).toString());
