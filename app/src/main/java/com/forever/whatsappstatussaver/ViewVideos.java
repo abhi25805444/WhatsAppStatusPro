@@ -161,13 +161,17 @@ public class ViewVideos extends AppCompatActivity {
         linearLayout = findViewById(R.id.adView);
         btnSharall = findViewById(R.id.shareall);
 
-        AdView adView = new AdView(getApplicationContext());
-        adView.setAdSize(getAdSize());
-        adView.setAdUnitId(getString(R.string.banneradunit));
-        linearLayout.removeAllViews();
-        linearLayout.addView(adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
-        adView.loadAd(adRequest);
+        if(Constant.is_ad_enable){
+            AdView adView = new AdView(getApplicationContext());
+            adView.setAdSize(getAdSize());
+            adView.setAdUnitId(getString(R.string.banneradunit));
+            linearLayout.removeAllViews();
+            linearLayout.addView(adView);
+            AdRequest adRequest = new AdRequest.Builder().build();
+            adView.loadAd(adRequest);
+        }
+
+
         videoView = findViewById(R.id.videoView);
         btnDownload = findViewById(R.id.btn_download);
         btnWhatsappShare = findViewById(R.id.btn_share);
