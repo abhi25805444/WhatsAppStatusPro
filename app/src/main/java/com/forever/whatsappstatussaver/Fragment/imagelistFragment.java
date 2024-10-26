@@ -139,8 +139,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             if (imageRecyclerView != null) {
                 imageRecyclerView.setVisibility(View.GONE);
             }
-            if(progressBar!=null)
-            {
+            if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
 
@@ -169,7 +168,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
                         }
                     }
                 }
-            }else {
+            } else {
                 if (view != null) {
                     view.setVisibility(View.VISIBLE);
                 }
@@ -191,6 +190,9 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             isRefreshClick = true;
             if (imageRecyclerView != null) {
                 imageRecyclerView.setVisibility(View.GONE);
+            }
+            if (view != null) {
+                view.setVisibility(View.GONE);
             }
             if (progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
@@ -215,15 +217,13 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
             if (imageRecyclerView != null) {
                 imageRecyclerView.setVisibility(View.VISIBLE);
             }
-            if (newAr != null && !areArrayListsEqual(ar, newAr)) {
-                // Check if the new list is different
-                if(ar!=null&&imageRecyclerViewAdapter!=null)
-                {
+            if (newAr != null) {
+                if (ar != null && imageRecyclerViewAdapter != null) {
                     ar.clear(); // Clear existing data
                     ar.addAll(newAr); // Update with new data
                     imageRecyclerViewAdapter.notifyDataSetChanged(); // Notify adapter
                     updateEmptyViewVisibility();
-                }else {
+                } else {
                     ar.clear(); // Clear existing data
                     ar.addAll(newAr);
                     imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
@@ -231,16 +231,25 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
                     updateEmptyViewVisibility();
                 }
             }
-
             isRefreshClick = false; // Reset refresh state
         }
     }
 
     private void updateEmptyViewVisibility() {
         if (imageRecyclerViewAdapter.getItemCount() == 0) {
-            view.setVisibility(View.VISIBLE);
+            if (view != null) {
+                view.setVisibility(View.VISIBLE);
+            }
+            if (imageRecyclerView != null) {
+                imageRecyclerView.setVisibility(View.GONE);
+            }
         } else {
-            view.setVisibility(View.GONE);
+            if (imageRecyclerView != null) {
+                imageRecyclerView.setVisibility(View.VISIBLE);
+            }
+            if (view != null) {
+                view.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -318,11 +327,10 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         final ArrayList<DocumentFile> imagesList = new ArrayList<>();
 
         File[] statusFiles;
-        if(TYPE==0)
-        {
+        if (TYPE == 0) {
             statusFiles = new File(Environment.getExternalStorageDirectory() +
                     File.separator + "WhatsApp/Media/.Statuses").listFiles();
-        }else {
+        } else {
             statusFiles = new File(Environment.getExternalStorageDirectory() +
                     File.separator + "WhatsApp Business/Media/.Statuses").listFiles();
         }

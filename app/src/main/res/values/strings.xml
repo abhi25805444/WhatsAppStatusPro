@@ -1,14 +1,13 @@
 <resources>
     <string name="app_name">Status Saver</string>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     //todo local
-<!--      <string name="banneradunit">ca-app-pub-3940256099942544/9214589741</string>-->
-<!--    <string name="rewardadunit">ca-app-pub-3940256099942544/5354046379</string>-->
-<!--    <string name="appopenunit">ca-app-pub-3940256099942544/9257395921</string>-->
+    <string name="banneradunit">ca-app-pub-3940256099942544/9214589741</string>
+    <string name="rewardadunit">ca-app-pub-3940256099942544/5354046379</string>
+    <string name="appopenunit">ca-app-pub-3940256099942544/9257395921</string>
 
     //todo live
-    <string name="banneradunit">ca-app-pub-8746432022534216/4916248666</string>
+    <!--<string name="banneradunit">ca-app-pub-8746432022534216/4916248666</string>
     <string name="rewardadunit">ca-app-pub-8746432022534216/4709747992</string>
-    <string name="appopenunit">ca-app-pub-8746432022534216/4958782519</string>
+    <string name="appopenunit">ca-app-pub-8746432022534216/4958782519</string>-->
 </resources>

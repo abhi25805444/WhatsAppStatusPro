@@ -38,13 +38,11 @@ public class MyApplication extends Application implements Application.ActivityLi
                         mFirebaseRemoteConfig.activate()
                                 .addOnCompleteListener(activateTask -> {
                                     boolean adsEnabled = mFirebaseRemoteConfig.getBoolean("is_ad_enable");
-                                    Log.d(TAG, "onCreate: adsEnabled "+adsEnabled);
-                                    Constant.is_ad_enable=adsEnabled;
-
-                                    if(Constant.is_ad_enable){
+                                    Log.d(TAG, "onCreate: adsEnabled " + adsEnabled);
+                                    Constant.is_ad_enable = adsEnabled;
+                                    if (Constant.is_ad_enable && !SessionManger.getIsPurchaseUser(currentActivity)) {
                                         loadAppOpenAd();
                                     }
-
                                 });
                     }
                 });
@@ -71,7 +69,7 @@ public class MyApplication extends Application implements Application.ActivityLi
 
                         @Override
                         public void onAdFailedToLoad(LoadAdError loadAdError) {
-                            Log.d(TAG, "onAdFailedToLoad: "+loadAdError);
+                            Log.d(TAG, "onAdFailedToLoad: " + loadAdError);
                             // Handle the error if the ad fails to load
                         }
                     });
@@ -86,22 +84,29 @@ public class MyApplication extends Application implements Application.ActivityLi
     }
 
     @Override
-    public void onActivityPaused(Activity activity) {}
+    public void onActivityPaused(Activity activity) {
+    }
 
     @Override
     public void onActivityStarted(Activity activity) {
+        BillingManger billingManger = new BillingManger();
+        billingManger.init(activity);
         currentActivity = activity;
     }
 
     @Override
-    public void onActivityStopped(Activity activity) {}
+    public void onActivityStopped(Activity activity) {
+    }
 
     @Override
-    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
+    public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
+    }
 
     @Override
-    public void onActivityDestroyed(Activity activity) {}
+    public void onActivityDestroyed(Activity activity) {
+    }
 
     @Override
-    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {}
+    public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    }
 }

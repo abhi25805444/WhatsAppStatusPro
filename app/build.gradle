@@ -14,8 +14,8 @@ android {
         applicationId "com.forever.statussaver"
         minSdk 24
         targetSdk 34
-        versionCode 11
-        versionName "11.0"
+        versionCode 13
+        versionName "13.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -50,4 +50,5 @@ dependencies {
     implementation 'com.android.billingclient:billing:6.1.0'
     implementation 'com.google.android.play:app-update:2.1.0'
     implementation 'com.google.firebase:firebase-config:21.1.0'
+    implementation 'com.facebook.shimmer:shimmer:0.5.0'
 }
