@@ -89,7 +89,7 @@ public class ViewImages extends AppCompatActivity {
 
     public void loadAd() {
         // Use the test ad unit ID to load an ad.
-        if(Constant.is_ad_enable){
+        if(Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())){
             RewardedInterstitialAd.load(ViewImages.this, getString(R.string.rewardadunit),
                     new AdRequest.Builder().build(), new RewardedInterstitialAdLoadCallback() {
 
@@ -180,7 +180,7 @@ public class ViewImages extends AppCompatActivity {
         linearLayout = findViewById(R.id.adView);
         btnShareAll=findViewById(R.id.btnShareAll);
 
-        if(Constant.is_ad_enable){
+        if(Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())){
             AdView adView = new AdView(getApplicationContext());
             adView.setAdSize(getAdSize());
             adView.setAdUnitId(getString(R.string.banneradunit));
@@ -262,7 +262,7 @@ public class ViewImages extends AppCompatActivity {
                     lastClickTime = currentTime;
                     isComeFromShare = false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable) {
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {
@@ -300,7 +300,7 @@ public class ViewImages extends AppCompatActivity {
                         lastClickTime = currentTime;
                         isComeFromWahtsappShare = true;
                         Constant.shareCounter++;
-                        if (Constant.shareCounter >= 3&&Constant.is_ad_enable) {
+                        if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())) {
                             Constant.shareCounter = 0;
                             loadAd();
                         } else {
@@ -329,7 +329,7 @@ public class ViewImages extends AppCompatActivity {
                     isComeFromShare = true;
                     isComeFromWahtsappShare=false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable) {
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {

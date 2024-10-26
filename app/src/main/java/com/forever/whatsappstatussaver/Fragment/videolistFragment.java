@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
+import com.forever.whatsappstatussaver.Adapters.ImageRecyclerViewAdapter;
 import com.forever.whatsappstatussaver.Adapters.VideoRecylerviewAdapter;
 import com.forever.whatsappstatussaver.Interface.VideoRefreshInterface;
 import com.forever.whatsappstatussaver.R;
@@ -65,7 +66,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
 
     @Override
     public void onRefreshVideo() {
-        refreshVideoList();
+        new refresh().execute();
     }
 
     @Override
@@ -99,8 +100,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             if (recyclerView != null) {
                 recyclerView.setVisibility(View.GONE);
             }
-            if(progressBar!=null)
-            {
+            if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
             }
         }
@@ -133,7 +133,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
             if (ar != null && ar.size() > 0) {
                 videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
                 recyclerView.setAdapter(videoRecylerviewAdapter);
-            }else {
+            } else {
                 if (view != null) {
                     view.setVisibility(View.VISIBLE);
                 }
@@ -150,75 +150,64 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
         }
     }
 
-    private void refreshVideoList() {
-        new AsyncTask<Void, Void, ArrayList<DocumentFile>>() {
-            @Override
-            protected void onPreExecute() {
-                super.onPreExecute();
-                if (recyclerView != null) {
-                    recyclerView.setVisibility(View.GONE);
-                }
-                if (view != null) {
-                    view.setVisibility(View.GONE);
-                }
-                if (progressBar != null) {
-                    progressBar.setVisibility(View.VISIBLE);
-                }
+
+    public class refresh extends AsyncTask<Void, Void, ArrayList<DocumentFile>> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.GONE);
+            }
+            if (view != null) {
+                view.setVisibility(View.GONE);
+            }
+            if (progressBar != null) {
+                progressBar.setVisibility(View.VISIBLE);
             }
 
-            @Override
-            protected void onCancelled() {
-                super.onCancelled();
-                if (view != null) {
-                    view.setVisibility(View.VISIBLE);
-                }
-                if (recyclerView != null) {
-                    recyclerView.setVisibility(View.GONE);
-                }
-                if(progressBar!=null)
-                {
-                    progressBar.setVisibility(View.GONE);
-                }
+        }
+
+        @Override
+        protected ArrayList<DocumentFile> doInBackground(Void... voids) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                return executeNew(TYPE);
+            } else {
+                return executeOld(TYPE);
             }
+        }
 
-            @Override
-            protected ArrayList<DocumentFile> doInBackground(Void... voids) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    return executeNew(TYPE);
-                } else {
-                    return executeOld(TYPE);
-                }
-
-            }
-
-            @Override
-            protected void onPostExecute(ArrayList<DocumentFile> newAr) {
-                super.onPostExecute(newAr);
+        @Override
+        protected void onPostExecute(ArrayList<DocumentFile> newAr) {
+            super.onPostExecute(newAr);
+            if (progressBar != null) {
                 progressBar.setVisibility(View.GONE);
-                if (recyclerView != null) {
-                    recyclerView.setVisibility(View.VISIBLE);
-                }
-                if (newAr != null) {
-                    if (!areArrayListsEqual(ar, newAr)) { // Check if the new list is different
-                        ar.clear();
-                        ar.addAll(newAr);
-                        if(videoRecylerviewAdapter!=null)
-                        {
-                            videoRecylerviewAdapter.notifyDataSetChanged();
-                        }else {
-                            videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
-                            recyclerView.setAdapter(videoRecylerviewAdapter);
-                        }
-
-                        sizeofArray = ar.size();
-                        updateEmptyViewVisibility();
-                    } else {
-
-                    }
-                }
             }
-        }.execute();
+            if (recyclerView != null) {
+                recyclerView.setVisibility(View.VISIBLE);
+            }
+            if (newAr != null) {
+                if (ar != null && videoRecylerviewAdapter != null) { // Check if the new list is different
+                    ar.clear();
+                    ar.addAll(newAr);
+                    videoRecylerviewAdapter.notifyDataSetChanged();
+                    updateEmptyViewVisibility();
+                } else {
+                    ar.clear();
+                    ar.addAll(newAr);
+                    videoRecylerviewAdapter = new VideoRecylerviewAdapter(getActivity(), ar);
+                    recyclerView.setAdapter(videoRecylerviewAdapter);
+                    updateEmptyViewVisibility();
+                }
+
+                sizeofArray = ar.size();
+
+            } else {
+
+            }
+        }
+
     }
+
 
     // Method to compare two ArrayLists for equality
     private boolean areArrayListsEqual(ArrayList<DocumentFile> list1, ArrayList<DocumentFile> list2) {
@@ -291,11 +280,10 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
 
         File[] statusFiles;
 
-        if(TYPE==0)
-        {
+        if (TYPE == 0) {
             statusFiles = new File(Environment.getExternalStorageDirectory() +
                     File.separator + "WhatsApp/Media/.Statuses").listFiles();
-        }else {
+        } else {
             statusFiles = new File(Environment.getExternalStorageDirectory() +
                     File.separator + "WhatsApp Business/Media/.Statuses").listFiles();
         }
@@ -336,8 +324,7 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
     }
 
     private void updateEmptyViewVisibility() {
-        if(videoRecylerviewAdapter!=null)
-        {
+        if (videoRecylerviewAdapter != null) {
             if (videoRecylerviewAdapter.getItemCount() == 0) {
                 if (view != null) {
                     view.setVisibility(View.VISIBLE);
