@@ -312,8 +312,10 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         for (DocumentFile documentFile : statusFiles) {
             if (documentFile != null && documentFile.isFile()) {
                 Log.d(TAG, "executeNew: file name " + documentFile.getName());
-                if (isImage(documentFile, getContext())) {
-                    imagesList.add(documentFile);
+                if(getContext()!=null){
+                    if (isImage(documentFile, getContext())) {
+                        imagesList.add(documentFile);
+                    }
                 }
                 Log.d(TAG, "executeNew: file name " + documentFile.getName());
             }

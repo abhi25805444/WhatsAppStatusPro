@@ -209,24 +209,14 @@ public class videolistFragment extends Fragment implements VideoRefreshInterface
     }
 
 
-    // Method to compare two ArrayLists for equality
-    private boolean areArrayListsEqual(ArrayList<DocumentFile> list1, ArrayList<DocumentFile> list2) {
-        if (list1.size() != list2.size()) {
-            return false;
-        }
-        for (int i = 0; i < list1.size(); i++) {
-            if (!list1.get(i).equals(list2.get(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private ArrayList<DocumentFile> executeNew(int TYPE) {
         final ArrayList<DocumentFile> videosList = new ArrayList<>();
-        List<UriPermission> list = requireActivity().getContentResolver().getPersistedUriPermissions();
+        List<UriPermission> list = new ArrayList<>();
+        if (getActivity() != null && getActivity().getContentResolver() != null) {
+            list = getActivity().getContentResolver().getPersistedUriPermissions();
+        }
 
-        if (list.isEmpty()) {
+        if (list != null && list.isEmpty()) {
             Log.e(TAG, "No persisted URI permissions found.");
             return videosList;
         }

@@ -47,25 +47,25 @@ public class BillingManger implements PurchasesUpdatedListener {
                 .setListener(this)
                 .enablePendingPurchases()
                 .build();
+        if (billingClient != null) {
+            billingClient.startConnection(new BillingClientStateListener() {
+                @Override
+                public void onBillingSetupFinished(BillingResult billingResult) {
+                    queryPurchases();
+                }
 
-        billingClient.startConnection(new BillingClientStateListener() {
-            @Override
-            public void onBillingSetupFinished(BillingResult billingResult) {
-                queryPurchases();
-            }
+                @Override
+                public void onBillingServiceDisconnected() {
+                    // Try reconnecting or handle connection loss
+                }
+            });
+        }
 
-            @Override
-            public void onBillingServiceDisconnected() {
-                // Try reconnecting or handle connection loss
-            }
-        });
     }
 
     private void acknowledgePurchase(Purchase purchase) {
-
-        Log.d(TAG, "acknowledgePurchase: isAcknowledged "+purchase.isAcknowledged());
         // Check if the purchase has already been acknowledged
-        if (!purchase.isAcknowledged()) {
+        if (purchase != null && purchase.isAcknowledged()) {
             AcknowledgePurchaseParams acknowledgePurchaseParams =
                     AcknowledgePurchaseParams.newBuilder()
                             .setPurchaseToken(purchase.getPurchaseToken())

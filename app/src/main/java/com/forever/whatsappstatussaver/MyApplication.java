@@ -40,7 +40,7 @@ public class MyApplication extends Application implements Application.ActivityLi
                                     boolean adsEnabled = mFirebaseRemoteConfig.getBoolean("is_ad_enable");
                                     Log.d(TAG, "onCreate: adsEnabled " + adsEnabled);
                                     Constant.is_ad_enable = adsEnabled;
-                                    if (Constant.is_ad_enable && !SessionManger.getIsPurchaseUser(currentActivity)) {
+                                    if (Constant.is_ad_enable && !SessionManger.getIsPurchaseUser(getApplicationContext())) {
                                         loadAppOpenAd();
                                     }
                                 });

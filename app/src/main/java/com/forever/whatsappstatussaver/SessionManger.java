@@ -27,12 +27,16 @@ public class SessionManger {
     }
 
     public static boolean getIsPurchaseUser(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("MyPreferences", MODE_PRIVATE);
-        boolean isPurchase = sharedPreferences.getBoolean(isPurchaseUser, false);
-        return isPurchase;
+        if (context != null) {
+            SharedPreferences sharedPreferences = context.getSharedPreferences("MyPreferences", MODE_PRIVATE);
+            boolean isPurchase = sharedPreferences.getBoolean(isPurchaseUser, false);
+            return isPurchase;
+        } else {
+            return false;
+        }
     }
 
-        public static boolean checkAndShowRemoveAdDialog(Context context) {
+    public static boolean checkAndShowRemoveAdDialog(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("MyPreferences", MODE_PRIVATE);
         long lastShownTime = sharedPreferences.getLong(LAST_DIALOG_TIME, 0);
         long currentTime = Calendar.getInstance().getTimeInMillis();
