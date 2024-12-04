@@ -32,6 +32,7 @@ import android.widget.Toast;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
+import com.android.billingclient.api.SkuDetails;
 import com.forever.whatsappstatussaver.BillingManger;
 import com.forever.whatsappstatussaver.Constant;
 import com.forever.whatsappstatussaver.Interface.RefreshInterface;
@@ -65,7 +66,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
     VideoRefreshInterface videoRefreshInterface;
     private int WHATSAPP = 0;
     private int WHATSAPPBUSINES = 1;
-    private TextView txtRemoveAd, txtNotNow, txtTitle, txtSubText;
+    private TextView txtRemoveAd, txtNotNow, txtTitle, txtSubText,txtPrice;
     private ImageView imgNoAds;
     private RelativeLayout btnRemoveAd;
 
@@ -255,6 +256,8 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
 
     private void openRemoveAdDailog() {
 
+        BillingManger.getInstance().queryProductDetails();
+
         Log.d(TAG, "openRemoveAdDailog: is pro " + SessionManger.getIsPurchaseUser(getActivity()));
 
         purchaseDailog = new Dialog(getActivity());
@@ -267,6 +270,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
         imgNoAds = purchaseDailog.findViewById(R.id.imgNoAds);
         txtTitle = purchaseDailog.findViewById(R.id.txtTitle);
         txtSubText = purchaseDailog.findViewById(R.id.txtSubText);
+        txtPrice = purchaseDailog.findViewById(R.id.txtPrice);
 
 
         Log.d(TAG, "openRemoveAdDailog: getIsPurchaseUser " + (SessionManger.getIsPurchaseUser(getActivity())));
@@ -309,6 +313,10 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
     public void updateUionPurchase() {
         Log.d(TAG, "updateUionPurchase: SessionManger.getIsPurchaseUser(getActivity()) " + SessionManger.getIsPurchaseUser(getActivity()));
         if (SessionManger.getIsPurchaseUser(getActivity())) {
+            if(txtPrice!=null){
+                txtPrice.setVisibility(View.GONE);
+                txtPrice.invalidate();
+            }
             if (btnNoAds != null) {
                 btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.pro_user));
                 btnNoAds.clearAnimation();
@@ -331,7 +339,14 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
                     txtRemoveAd.setText("Mange Subscription");
                 }
             }
+            if(btnNoAds!=null){
+                btnNoAds.invalidate();
+            }
         } else {
+            if(txtPrice!=null){
+                txtPrice.setVisibility(View.VISIBLE);
+                txtPrice.invalidate();
+            }
             Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.plus);
             if (btnNoAds != null) {
                 btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.remove_ads_icon));
@@ -348,6 +363,9 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             }
             if (txtRemoveAd != null) {
                 txtRemoveAd.setText("Remove Ads Now");
+            }
+            if(btnNoAds!=null){
+                btnNoAds.invalidate();
             }
         }
     }
@@ -440,6 +458,21 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             }
         } else if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) {
         } else {
+        }
+    }
+
+    @Override
+    public void onSkuDetailsResponse(BillingResult billingResult, List<SkuDetails> skuDetailsList) {
+        if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && skuDetailsList != null) {
+            for (SkuDetails skuDetails : skuDetailsList) {
+                String price = skuDetails.getPrice();
+                String currencyCode = skuDetails.getPriceCurrencyCode();
+                if(txtPrice!=null){
+                    txtPrice.setText(price+" / "+"Year");
+                }
+                Log.d("Billing", "Price: " + price + ", Currency: " + currencyCode);
+                // Display localized prices in the UI
+            }
         }
     }
 }

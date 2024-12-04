@@ -20,6 +20,7 @@ import com.android.billingclient.api.SkuDetailsParams;
 import com.android.billingclient.api.SkuDetailsResponseListener;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class BillingManger implements PurchasesUpdatedListener {
@@ -160,6 +161,32 @@ public class BillingManger implements PurchasesUpdatedListener {
 
     }
 
+    public void queryProductDetails() {
+        List<String> productIds = Arrays.asList("remove_ads_subscription");
+
+        SkuDetailsParams params = SkuDetailsParams.newBuilder()
+                .setSkusList(productIds)
+                .setType(BillingClient.SkuType.SUBS)
+                .build();
+
+        billingClient.querySkuDetailsAsync(params, new SkuDetailsResponseListener() {
+            @Override
+            public void onSkuDetailsResponse(BillingResult billingResult, List<SkuDetails> skuDetailsList) {
+                if(billingCallback!=null){
+                    billingCallback.onSkuDetailsResponse(billingResult,skuDetailsList);
+                }
+                if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && skuDetailsList != null) {
+                    for (SkuDetails skuDetails : skuDetailsList) {
+                        String price = skuDetails.getPrice();
+                        String currencyCode = skuDetails.getPriceCurrencyCode();
+                        Log.d("Billing", "Price: " + price + ", Currency: " + currencyCode);
+                        // Display localized prices in the UI
+                    }
+                }
+            }
+        });
+    }
+
 
     public boolean getIsAutoRenew() {
         return isAutoRenew;
@@ -198,6 +225,8 @@ public class BillingManger implements PurchasesUpdatedListener {
         void onPurchasesUpdated(@NonNull BillingResult billingResult, @Nullable List<Purchase> list);
 
         void onQueryPurchasesResponse(BillingResult billingResult, List<Purchase> purchasesList);
+
+        void onSkuDetailsResponse(BillingResult billingResult, List<SkuDetails> skuDetailsList);
     }
 
 }
