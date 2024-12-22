@@ -12,7 +12,9 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
+import android.os.Handler;
 import android.util.DisplayMetrics;
+import android.util.Half;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -66,9 +68,10 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
     VideoRefreshInterface videoRefreshInterface;
     private int WHATSAPP = 0;
     private int WHATSAPPBUSINES = 1;
-    private TextView txtRemoveAd, txtNotNow, txtTitle, txtSubText,txtPrice;
+    private TextView txtRemoveAd, txtNotNow, txtTitle, txtSubText, txtPrice;
     private ImageView imgNoAds;
     private RelativeLayout btnRemoveAd;
+
 
     private static final String TAG = "HomeFragment";
 
@@ -81,6 +84,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
         MainActivity.isFirsttime = false;
         spinner = root.findViewById(R.id.spinner);
         tabLayout = root.findViewById(R.id.tabLayout);
+        viewPager = root.findViewById(R.id.viewPager);
         adContainer = root.findViewById(R.id.adView);
         btnNoAds = root.findViewById(R.id.noadsicon);
         btn_refresh = root.findViewById(R.id.btn_refresh);
@@ -159,12 +163,53 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             });
         }
 
+
+
+
+        /*if (viewpagerAdapter.getItem(1) instanceof imagelistFragment) {
+            ((imagelistFragment) viewpagerAdapter.getItem(1)).setInterface(this);
+        }*/
+        // Inflate the layout for this fragment
+        return root;
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+
+        BillingManger.getInstance().setBillingLisner(this);
+        if (SessionManger.getIsPurchaseUser(getActivity())) {
+            if (btnNoAds != null) {
+                btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.pro_user));
+                btnNoAds.clearAnimation();
+            }
+        } else {
+            Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.plus);
+            if (btnNoAds != null) {
+                btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.remove_ads_icon));
+                btnNoAds.startAnimation(animation);
+            }
+        }
+        btnNoAds.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                BillingManger.getInstance().queryPurchases();
+                openRemoveAdDailog();
+            }
+        });
+
+
+        viewpagerAdapter = new viewpagerAdapter(getActivity().getSupportFragmentManager());
+        if (viewpagerAdapter != null) {
+            viewPager.setAdapter(viewpagerAdapter);
+        }
+        tabLayout.setupWithViewPager(viewPager);
+
         String[] options = {"WHATSAPP", "WHATSAPP BUSINESS"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), R.layout.spinner_item_layout, options);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-        Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.plus);
-        btnNoAds.startAnimation(animation);
         if (adapter != null) {
             spinner.setAdapter(adapter);
         }
@@ -207,44 +252,6 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             });
         }
 
-        viewPager = root.findViewById(R.id.viewPager);
-        viewpagerAdapter = new viewpagerAdapter(getActivity().getSupportFragmentManager());
-        if (viewpagerAdapter != null) {
-            viewPager.setAdapter(viewpagerAdapter);
-        }
-        tabLayout.setupWithViewPager(viewPager);
-
-
-        /*if (viewpagerAdapter.getItem(1) instanceof imagelistFragment) {
-            ((imagelistFragment) viewpagerAdapter.getItem(1)).setInterface(this);
-        }*/
-        // Inflate the layout for this fragment
-        return root;
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-        BillingManger.getInstance().setBillingLisner(this);
-        if (SessionManger.getIsPurchaseUser(getActivity())) {
-            if (btnNoAds != null) {
-                btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.pro_user));
-                btnNoAds.clearAnimation();
-            }
-        } else {
-            Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.plus);
-            if (btnNoAds != null) {
-                btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.remove_ads_icon));
-                btnNoAds.startAnimation(animation);
-            }
-        }
-        btnNoAds.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                BillingManger.getInstance().queryPurchases();
-                openRemoveAdDailog();
-            }
-        });
 
     }
 
@@ -313,7 +320,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
     public void updateUionPurchase() {
         Log.d(TAG, "updateUionPurchase: SessionManger.getIsPurchaseUser(getActivity()) " + SessionManger.getIsPurchaseUser(getActivity()));
         if (SessionManger.getIsPurchaseUser(getActivity())) {
-            if(txtPrice!=null){
+            if (txtPrice != null) {
                 txtPrice.setVisibility(View.GONE);
                 txtPrice.invalidate();
             }
@@ -339,11 +346,11 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
                     txtRemoveAd.setText("Mange Subscription");
                 }
             }
-            if(btnNoAds!=null){
+            if (btnNoAds != null) {
                 btnNoAds.invalidate();
             }
         } else {
-            if(txtPrice!=null){
+            if (txtPrice != null) {
                 txtPrice.setVisibility(View.VISIBLE);
                 txtPrice.invalidate();
             }
@@ -364,7 +371,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             if (txtRemoveAd != null) {
                 txtRemoveAd.setText("Remove Ads Now");
             }
-            if(btnNoAds!=null){
+            if (btnNoAds != null) {
                 btnNoAds.invalidate();
             }
         }
@@ -467,8 +474,8 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             for (SkuDetails skuDetails : skuDetailsList) {
                 String price = skuDetails.getPrice();
                 String currencyCode = skuDetails.getPriceCurrencyCode();
-                if(txtPrice!=null){
-                    txtPrice.setText(price+" / "+"Year");
+                if (txtPrice != null) {
+                    txtPrice.setText(price + " / " + "Year");
                 }
                 Log.d("Billing", "Price: " + price + ", Currency: " + currencyCode);
                 // Display localized prices in the UI

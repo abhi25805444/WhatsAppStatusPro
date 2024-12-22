@@ -8,12 +8,15 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.StaggeredGridLayoutManager;
 
 import android.os.Environment;
 import android.util.Log;
@@ -24,6 +27,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.forever.whatsappstatussaver.Adapters.ImageRecyclerViewAdapter;
+import com.forever.whatsappstatussaver.Adapters.SpacingItemDecoration;
 import com.forever.whatsappstatussaver.Interface.RefreshInterface;
 import com.forever.whatsappstatussaver.R;
 
@@ -48,20 +52,41 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
     static boolean isRefreshClick = false;
     int TYPE;
 
+    private static final String TAG = "imagelistFragment";
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate: ");
+
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+        Log.d(TAG, "onCreateView: ");
         View root = inflater.inflate(R.layout.fragment_imagelist, container, false);
         view = root.findViewById(R.id.emptyviewofimage);
+        imageRecyclerView = root.findViewById(R.id.imageRecyclerView);
+        progressBar = root.findViewById(R.id.progressBar);
+        return root;
+    }
+
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+
+        Log.d(TAG, "onViewCreated: ");
+
         if (ar != null && ar.size() > 0) {
             sizeofArray = ar.size();
         }
-        progressBar = root.findViewById(R.id.progressBar);
-        imageRecyclerView = root.findViewById(R.id.imageRecyclerView);
 
         if (imageRecyclerView != null) {
-            imageRecyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 2));
+            StaggeredGridLayoutManager layoutManager =
+                    new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
+            imageRecyclerView.setLayoutManager(layoutManager);
         }
         fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
         FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
@@ -69,8 +94,6 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         if (homeFragment != null) {
             homeFragment.setRefreshInterface(this);
         }
-
-        return root;
     }
 
     @Override
@@ -103,6 +126,9 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
     public class GetImageStatus extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPreExecute() {
+
+            Log.d(TAG, "onPreExecute: ");
+
             super.onPreExecute();
             if (progressBar != null) {
                 progressBar.setVisibility(View.VISIBLE);
@@ -117,6 +143,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
 
         @Override
         protected Void doInBackground(Void... voids) {
+            Log.d(TAG, "doInBackground: ");
             if (ar != null) {
                 ar.clear();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -133,6 +160,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         protected void onCancelled() {
             super.onCancelled();
 
+            Log.d(TAG, "onCancelled: ");
             if (view != null) {
                 view.setVisibility(View.VISIBLE);
             }
@@ -147,10 +175,12 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
 
         @Override
         protected void onPostExecute(Void aVoid) {
+            Log.d(TAG, "onPostExecute: ");
             super.onPostExecute(aVoid);
             if (fragmentTransaction != null && ar != null && ar.size() > 0) {
                 imageRecyclerViewAdapter = new ImageRecyclerViewAdapter(getActivity(), ar, false, fragmentTransaction, getActivity());
                 if (imageRecyclerViewAdapter != null) {
+                    Log.d(TAG, "onPostExecute: imageRecyclerViewAdapter "+imageRecyclerViewAdapter+" size "+ar.size());
                     imageRecyclerView.setAdapter(imageRecyclerViewAdapter);
                     if (imageRecyclerViewAdapter.getItemCount() == 0) {
                         if (view != null) {
@@ -312,7 +342,7 @@ public class imagelistFragment extends Fragment implements RefreshInterface {
         for (DocumentFile documentFile : statusFiles) {
             if (documentFile != null && documentFile.isFile()) {
                 Log.d(TAG, "executeNew: file name " + documentFile.getName());
-                if(getContext()!=null){
+                if (getContext() != null) {
                     if (isImage(documentFile, getContext())) {
                         imagesList.add(documentFile);
                     }

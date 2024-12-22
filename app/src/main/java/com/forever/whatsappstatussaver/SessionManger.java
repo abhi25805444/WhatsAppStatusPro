@@ -27,13 +27,14 @@ public class SessionManger {
     }
 
     public static boolean getIsPurchaseUser(Context context) {
-        if (context != null) {
+        return true;
+       /* if (context != null) {
             SharedPreferences sharedPreferences = context.getSharedPreferences("MyPreferences", MODE_PRIVATE);
             boolean isPurchase = sharedPreferences.getBoolean(isPurchaseUser, false);
             return isPurchase;
         } else {
             return false;
-        }
+        }*/
     }
 
     public static boolean checkAndShowRemoveAdDialog(Context context) {
