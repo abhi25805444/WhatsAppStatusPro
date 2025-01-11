@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.forever.whatsappstatussaver.R;
 import com.forever.whatsappstatussaver.ViewImages;
 import com.forever.whatsappstatussaver.ViewVideos;
@@ -49,7 +50,7 @@ public class VideoRecylerviewAdapter extends RecyclerView.Adapter{
 
 //        ((videoViewHolder) holder).imageView.setImageBitmap(videoThumblist.get(holder.getAdapterPosition()));
 
-        Glide.with(context).load(fileArrayList.get(holder.getAdapterPosition()).getUri()).into(((videoViewHolder) holder).imageView);
+        Glide.with(context).load(fileArrayList.get(holder.getAdapterPosition()).getUri()).diskCacheStrategy(DiskCacheStrategy.ALL).placeholder(R.drawable.ic_placeholder).error(R.drawable.ic_placeholder).into((((videoViewHolder) holder).imageView));
         ((videoViewHolder) holder).imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -40,6 +40,7 @@ import android.widget.Toast;
 
 
 import com.forever.whatsappstatussaver.R;
+import com.forever.whatsappstatussaver.SessionManger;
 
 import java.util.Objects;
 
@@ -54,6 +55,7 @@ public class PermisionFragment extends Fragment {
     TextView textView2;
     private static final int REQUEST_PERMISSIONS = 1234;
     Context context;
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -61,7 +63,14 @@ public class PermisionFragment extends Fragment {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
 
         } else {
-            showHomeFrag();
+            if (isWhatsAppInstalled()) {
+                showHomeFrag();
+            } else if (isWhatsAppBusinessInstalled()) {
+                SessionManger.getInstance().setKeySelectionType(1);
+                showHomeFrag();
+            } else {
+                Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
+            }
         }
 
     }
@@ -90,10 +99,12 @@ public class PermisionFragment extends Fragment {
                 textView2.setText("2. Click on Allow >");
             }
         } else {
-            if(isWhatsAppInstalled())
-            {
+            if (isWhatsAppInstalled()) {
                 showHomeFrag();
-            }else {
+            } else if (isWhatsAppBusinessInstalled()) {
+                SessionManger.getInstance().setKeySelectionType(1);
+                showHomeFrag();
+            } else {
                 Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
             }
 
@@ -105,22 +116,35 @@ public class PermisionFragment extends Fragment {
             public void onClick(View v) {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
-                    // If Android 10+
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        requestPermissionQ();
+
+                    Log.d(TAG, "onClick: isWhatsAppBusinessInstalled "+isWhatsAppBusinessInstalled()+" isWhatsAppInstalled "+isWhatsAppInstalled());
+                    if (isWhatsAppInstalled()) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            requestPermissionQ();
+                        }
+                        requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
+                    } else if (isWhatsAppBusinessInstalled()) {
+                        SessionManger.getInstance().setKeySelectionType(1);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            requestPermissionQ();
+                        }
+                        requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
+                    } else {
+                        Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
                     }
-                    requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
+                    // If Android 10+
+
                 } else {
-                    if(isWhatsAppInstalled())
-                    {
+                    if (isWhatsAppInstalled()) {
                         showHomeFrag();
-                    }else {
+                    } else if (isWhatsAppBusinessInstalled()) {
+                        SessionManger.getInstance().setKeySelectionType(1);
+                        showHomeFrag();
+                    } else {
                         Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
                     }
 
                 }
-
-
 
 
             }
@@ -134,6 +158,17 @@ public class PermisionFragment extends Fragment {
         PackageManager packageManager = getActivity().getPackageManager();
         try {
             packageManager.getPackageInfo("com.whatsapp", PackageManager.GET_ACTIVITIES);
+            return true; // WhatsApp Business is installed
+        } catch (PackageManager.NameNotFoundException e) {
+            return false; // WhatsApp Business is not installed
+        }
+    }
+
+    public boolean isWhatsAppBusinessInstalled() {
+
+        PackageManager packageManager = getActivity().getPackageManager();
+        try {
+            packageManager.getPackageInfo("com.whatsapp.w4b", PackageManager.GET_ACTIVITIES);
             return true; // WhatsApp Business is installed
         } catch (PackageManager.NameNotFoundException e) {
             return false; // WhatsApp Business is not installed
@@ -167,6 +202,7 @@ public class PermisionFragment extends Fragment {
 
         activityResultLauncher.launch(intent);
     }
+
     public void showHomeFrag() {
         FragmentTransaction ft = getActivity().getSupportFragmentManager().beginTransaction();
         Fragment Homefrag = new HomeFragment();
@@ -174,6 +210,7 @@ public class PermisionFragment extends Fragment {
         ft.commit();
         Log.d(TAG, "showHomeFrag: ");
     }
+
     private boolean arePermissionDenied() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return getActivity().getContentResolver().getPersistedUriPermissions().size() <= 0;
@@ -197,7 +234,14 @@ public class PermisionFragment extends Fragment {
                             data.getData(),
                             Intent.FLAG_GRANT_READ_URI_PERMISSION |
                                     Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                    showHomeFrag();
+                    if (isWhatsAppInstalled()) {
+                        showHomeFrag();
+                    } else if (isWhatsAppBusinessInstalled()) {
+                        SessionManger.getInstance().setKeySelectionType(1);
+                        showHomeFrag();
+                    } else {
+                        Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
+                    }
 
                 }
             }

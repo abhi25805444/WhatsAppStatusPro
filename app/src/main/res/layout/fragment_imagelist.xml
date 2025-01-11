@@ -6,30 +6,25 @@
     android:layout_height="match_parent"
     android:background="@color/bg"
     android:orientation="vertical"
-    tools:context=".Fragment.imagelistFragment">
+    tools:context=".Fragment.ImagelistFragment">
 
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/imageRecyclerView"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true" />
+        android:layout_height="match_parent"
+        android:layout_marginHorizontal="8dp">
 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/imageRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:background="@color/white" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <include
         android:id="@+id/emptyviewofimage"
         layout="@layout/empty_view"
         android:visibility="gone" />
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:indeterminate="true"
-        android:indeterminateTint="@color/blue"
-        android:indeterminateTintMode="src_atop" />
 
 </RelativeLayout>

@@ -161,7 +161,7 @@ public class ViewVideos extends AppCompatActivity {
         linearLayout = findViewById(R.id.adView);
         btnSharall = findViewById(R.id.shareall);
 
-        if(Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())){
+        if(Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()){
             AdView adView = new AdView(getApplicationContext());
             adView.setAdSize(getAdSize());
             adView.setAdUnitId(getString(R.string.banneradunit));
@@ -238,7 +238,7 @@ public class ViewVideos extends AppCompatActivity {
                     lastClickTime = currentTime;
                     isComeFromShare = false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())) {
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {
@@ -276,7 +276,7 @@ public class ViewVideos extends AppCompatActivity {
                     lastClickTime = currentTime;
                     isComeFromWahtsappShare = false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())) {
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {
@@ -302,7 +302,7 @@ public class ViewVideos extends AppCompatActivity {
                     isComeFromShare = true;
                     isComeFromWahtsappShare = true;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getIsPurchaseUser(getBaseContext())) {
+                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {

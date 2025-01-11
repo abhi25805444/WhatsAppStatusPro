@@ -4,17 +4,17 @@ package com.forever.whatsappstatussaver.Fragment;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
-import android.os.Handler;
 import android.util.DisplayMetrics;
-import android.util.Half;
 import android.util.Log;
 import android.view.Display;
 import android.view.LayoutInflater;
@@ -22,15 +22,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.RelativeLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingResult;
 import com.android.billingclient.api.Purchase;
@@ -42,13 +43,12 @@ import com.forever.whatsappstatussaver.Interface.VideoRefreshInterface;
 import com.forever.whatsappstatussaver.MainActivity;
 import com.forever.whatsappstatussaver.R;
 import com.forever.whatsappstatussaver.SessionManger;
-import com.forever.whatsappstatussaver.viewpagerAdapter;
+import com.forever.whatsappstatussaver.ViewpagerAdapter;
 import com.google.android.gms.ads.AdListener;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
 import com.google.android.gms.ads.LoadAdError;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.tabs.TabLayout;
 
 import java.util.List;
@@ -57,19 +57,16 @@ import java.util.List;
 public class HomeFragment extends Fragment implements BillingManger.BillingCallback {
     TabLayout tabLayout;
     ViewPager viewPager;
-    viewpagerAdapter viewpagerAdapter;
-    Spinner spinner;
+    ViewpagerAdapter viewpagerAdapter;
     LinearLayout adContainer;
-    ImageView btnNoAds;
-    FloatingActionButton btn_refresh;
-
+    LottieAnimationView btnNoAds;
 
     RefreshInterface refreshInterface;
     VideoRefreshInterface videoRefreshInterface;
     private int WHATSAPP = 0;
     private int WHATSAPPBUSINES = 1;
     private TextView txtRemoveAd, txtNotNow, txtTitle, txtSubText, txtPrice;
-    private ImageView imgNoAds;
+    private ImageView imgNoAds, btnFilter;
     private RelativeLayout btnRemoveAd;
 
 
@@ -77,18 +74,25 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
 
     private Dialog purchaseDailog;
 
+    private CardView cardDone;
+    private RadioButton radioWP, radioWpBusiness;
+    private RadioGroup radioGroup;
+
+    private long lastClickTime = 0; // Variable to track last click time
+    private static final long CLICK_DELAY = 1000; // 1 second delay
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_home, container, false);
         MainActivity.isFirsttime = false;
-        spinner = root.findViewById(R.id.spinner);
         tabLayout = root.findViewById(R.id.tabLayout);
         viewPager = root.findViewById(R.id.viewPager);
         adContainer = root.findViewById(R.id.adView);
         btnNoAds = root.findViewById(R.id.noadsicon);
-        btn_refresh = root.findViewById(R.id.btn_refresh);
-        if (Constant.is_ad_enable && !SessionManger.getIsPurchaseUser(getActivity())) {
+        btnFilter = root.findViewById(R.id.btnFilter);
+
+        if (Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
             AdView adView = new AdView(getActivity());
             adView.setAdSize(getAdSize());
             adView.setAdUnitId(getString(R.string.banneradunit));
@@ -138,38 +142,10 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             });
         }
 
-        if (!SessionManger.getIsPurchaseUser(getActivity()) && SessionManger.checkAndShowRemoveAdDialog(getActivity())) {
+        if (!SessionManger.getInstance().getIsPurchaseUser() && SessionManger.getInstance().checkAndShowRemoveAdDialog()) {
             openRemoveAdDailog();
         }
-        Log.d(TAG, "onCreateView: Tag of frag " + getTag());
 
-        if (btn_refresh != null) {
-            btn_refresh.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-
-                    Log.d(TAG, "onClick: (((((((((((((((((( 1");
-                    if (refreshInterface != null) {
-                        Log.d(TAG, "onClick: (((((((((((((((((( 1");
-                        refreshInterface.onRefreshImage();
-                    }
-
-                    if (videoRefreshInterface != null) {
-                        videoRefreshInterface.onRefreshVideo();
-                    }
-
-
-                }
-            });
-        }
-
-
-
-
-        /*if (viewpagerAdapter.getItem(1) instanceof imagelistFragment) {
-            ((imagelistFragment) viewpagerAdapter.getItem(1)).setInterface(this);
-        }*/
-        // Inflate the layout for this fragment
         return root;
     }
 
@@ -179,28 +155,27 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
 
 
         BillingManger.getInstance().setBillingLisner(this);
-        if (SessionManger.getIsPurchaseUser(getActivity())) {
-            if (btnNoAds != null) {
-                btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.pro_user));
-                btnNoAds.clearAnimation();
-            }
-        } else {
-            Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.plus);
-            if (btnNoAds != null) {
-                btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.remove_ads_icon));
-                btnNoAds.startAnimation(animation);
-            }
+
+        if (btnNoAds != null) {
+            btnNoAds.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    BillingManger.getInstance().queryPurchases();
+                    openRemoveAdDailog();
+                }
+            });
         }
-        btnNoAds.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                BillingManger.getInstance().queryPurchases();
-                openRemoveAdDailog();
-            }
-        });
 
+        if (btnFilter != null) {
+            btnFilter.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showSelectionTab();
+                }
+            });
+        }
 
-        viewpagerAdapter = new viewpagerAdapter(getActivity().getSupportFragmentManager());
+        viewpagerAdapter = new ViewpagerAdapter(getActivity().getSupportFragmentManager());
         if (viewpagerAdapter != null) {
             viewPager.setAdapter(viewpagerAdapter);
         }
@@ -210,23 +185,15 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), R.layout.spinner_item_layout, options);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 
-        if (adapter != null) {
-            spinner.setAdapter(adapter);
-        }
 
-        if (spinner != null) {
+       /* if (spinner != null) {
             spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     if (position == WHATSAPPBUSINES) {
                         boolean isWhatsAppBusinessInstalled = isWhatsAppBusinessInstalled();
                         if (isWhatsAppBusinessInstalled) {
-                            if (refreshInterface != null) {
-                                refreshInterface.onExecuteNew(WHATSAPPBUSINES);
-                            }
-                            if (videoRefreshInterface != null) {
-                                videoRefreshInterface.onExecuteNew(WHATSAPPBUSINES);
-                            }
+
                             // WhatsApp Business is installed
                         } else {
                             Toast.makeText(getActivity(), "Please Install WhatsApp Business App ", Toast.LENGTH_SHORT).show();
@@ -236,12 +203,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
                             // WhatsApp Business is not installed
                         }
                     } else if (position == WHATSAPP) {
-                        if (refreshInterface != null) {
-                            refreshInterface.onExecuteNew(WHATSAPP);
-                        }
-                        if (videoRefreshInterface != null) {
-                            videoRefreshInterface.onExecuteNew(WHATSAPP);
-                        }
+
                     }
                 }
 
@@ -250,9 +212,101 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
 
                 }
             });
+        }*/
+
+
+    }
+
+    private void showSelectionTab() {
+
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastClickTime < CLICK_DELAY) {
+            return;
+        }
+        lastClickTime = currentTime;
+
+        Dialog dialog = new Dialog(getActivity());
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        dialog.setContentView(R.layout.dailog_slection_option);
+        cardDone = dialog.findViewById(R.id.cardDone);
+        radioGroup = dialog.findViewById(R.id.radioGroup);
+        radioWP = dialog.findViewById(R.id.radioWp);
+        radioWpBusiness = dialog.findViewById(R.id.radioWpBusiness);
+
+        if (SessionManger.getInstance().getSelectionType() == WHATSAPP) {
+            radioWP.setChecked(true);
+        } else if (SessionManger.getInstance().getSelectionType() == WHATSAPPBUSINES) {
+            radioWpBusiness.setChecked(true);
+
         }
 
+        if (cardDone != null) {
+            cardDone.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (radioGroup != null) {
+                        if (radioGroup.getCheckedRadioButtonId() == radioWP.getId()) {
+                            Log.d(TAG, "onClick: ********* 1 " + SessionManger.getInstance().getSelectionType());
+                            if (SessionManger.getInstance().getSelectionType() != WHATSAPP) {
+                                if(!isWhatsAppInstalled()){
+                                    Toast.makeText(getActivity(), "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
+                                    if (dialog != null && dialog.isShowing()) {
+                                        dialog.dismiss();
+                                    }
+                                    return;
+                                }
+                                Log.d(TAG, "onClick: ********* 2 ");
+                                SessionManger.getInstance().setKeySelectionType(WHATSAPP);
+                                if (refreshInterface != null) {
+                                    refreshInterface.onExecuteNew(WHATSAPP);
+                                }
+                                if (videoRefreshInterface != null) {
+                                    videoRefreshInterface.onExecuteNew(WHATSAPP);
+                                }
+                            }
+                        } else {
+                            Log.d(TAG, "onClick: ********* 3 " + WHATSAPPBUSINES);
+                            if (SessionManger.getInstance().getSelectionType() != WHATSAPPBUSINES) {
+                                if(!isWhatsAppBusinessInstalled()){
+                                    Toast.makeText(getActivity(), "Please Install WhatsApp Business", Toast.LENGTH_SHORT).show();
+                                    if (dialog != null && dialog.isShowing()) {
+                                        dialog.dismiss();
+                                    }
+                                    return;
+                                }
+                                SessionManger.getInstance().setKeySelectionType(WHATSAPPBUSINES);
+                                if (refreshInterface != null) {
+                                    refreshInterface.onExecuteNew(WHATSAPPBUSINES);
+                                }
+                                if (videoRefreshInterface != null) {
+                                    videoRefreshInterface.onExecuteNew(WHATSAPPBUSINES);
+                                }
+                            }
+                        }
+                    }
+                    if (dialog != null && dialog.isShowing()) {
+                        dialog.dismiss();
+                    }
+                }
+            });
+        }
 
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+        // Show the dialog
+        dialog.show();
+    }
+
+    public boolean isWhatsAppInstalled() {
+
+        PackageManager packageManager = getActivity().getPackageManager();
+        try {
+            packageManager.getPackageInfo("com.whatsapp", PackageManager.GET_ACTIVITIES);
+            return true; // WhatsApp Business is installed
+        } catch (PackageManager.NameNotFoundException e) {
+            return false; // WhatsApp Business is not installed
+        }
     }
 
     public void hideBannerAd() {
@@ -265,7 +319,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
 
         BillingManger.getInstance().queryProductDetails();
 
-        Log.d(TAG, "openRemoveAdDailog: is pro " + SessionManger.getIsPurchaseUser(getActivity()));
+        Log.d(TAG, "openRemoveAdDailog: is pro " + SessionManger.getInstance().getIsPurchaseUser());
 
         purchaseDailog = new Dialog(getActivity());
 
@@ -280,7 +334,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
         txtPrice = purchaseDailog.findViewById(R.id.txtPrice);
 
 
-        Log.d(TAG, "openRemoveAdDailog: getIsPurchaseUser " + (SessionManger.getIsPurchaseUser(getActivity())));
+        Log.d(TAG, "openRemoveAdDailog: getIsPurchaseUser " + (SessionManger.getInstance().getIsPurchaseUser()));
 
 
         if (txtNotNow != null) {
@@ -298,7 +352,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             btnRemoveAd.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if (SessionManger.getIsPurchaseUser(getActivity())) {
+                    if (SessionManger.getInstance().getIsPurchaseUser()) {
                         String subscriptionId = "remove_ads_subscription"; // Replace with your subscription ID
                         Intent manageSubscriptionIntent = new Intent(Intent.ACTION_VIEW);
                         manageSubscriptionIntent.setData(Uri.parse("https://play.google.com/store/account/subscriptions?sku=" + subscriptionId + "&package=" + getActivity().getPackageName()));
@@ -318,16 +372,16 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
     }
 
     public void updateUionPurchase() {
-        Log.d(TAG, "updateUionPurchase: SessionManger.getIsPurchaseUser(getActivity()) " + SessionManger.getIsPurchaseUser(getActivity()));
-        if (SessionManger.getIsPurchaseUser(getActivity())) {
+        Log.d(TAG, "updateUionPurchase: SessionManger.getIsPurchaseUser(getActivity()) " + SessionManger.getInstance().getIsPurchaseUser());
+        if (SessionManger.getInstance().getIsPurchaseUser()) {
             if (txtPrice != null) {
                 txtPrice.setVisibility(View.GONE);
                 txtPrice.invalidate();
             }
-            if (btnNoAds != null) {
+            /*if (btnNoAds != null) {
                 btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.pro_user));
                 btnNoAds.clearAnimation();
-            }
+            }*/
             if (txtSubText != null) {
                 txtSubText.setText("Relax and enjoy the app without interruptions from ads.");
             }
@@ -355,10 +409,10 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
                 txtPrice.invalidate();
             }
             Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.plus);
-            if (btnNoAds != null) {
+            /*if (btnNoAds != null) {
                 btnNoAds.setImageDrawable(getResources().getDrawable(R.drawable.remove_ads_icon));
                 btnNoAds.startAnimation(animation);
-            }
+            }*/
             if (txtSubText != null) {
                 txtSubText.setText("No more ads! Just you and your favorite WhatsApp statuses.");
             }
@@ -418,7 +472,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
     @Override
     public void onPurchasesUpdated(@NonNull BillingResult billingResult, @Nullable List<Purchase> list) {
         if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK && list != null) {
-            SessionManger.setIsPurchaseUser(getActivity(), true);
+            SessionManger.getInstance().setIsPurchaseUser(true);
             hideBannerAd();
             updateUionPurchase();
         } else if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) {
@@ -426,7 +480,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             // User canceled the purchase
         } else {
             Log.d(TAG, "onPurchasesUpdated: other error ");
-            SessionManger.setIsPurchaseUser(getActivity(), false);
+            SessionManger.getInstance().setIsPurchaseUser(false);
             updateUionPurchase();
             // Handle other errors
         }

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.media.ExifInterface;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.view.LayoutInflater;
@@ -25,6 +26,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.forever.whatsappstatussaver.MainActivity;
 import com.forever.whatsappstatussaver.R;
+import com.forever.whatsappstatussaver.View.MyCardViewNew;
 import com.forever.whatsappstatussaver.ViewImages;
 
 import java.io.File;
@@ -56,21 +58,19 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof ImageViewHolder && !isVideoimage) {
 
-            ImageViewHolder imageViewHolder= (ImageViewHolder) holder;
-            if(arrayList!=null&&arrayList.size()>0&&imageViewHolder.imageView!=null)
-            {
-                Glide.with(context).load(arrayList.get(holder.getAdapterPosition()).getUri()).into((imageViewHolder.imageView));
+            ImageViewHolder imageViewHolder = (ImageViewHolder) holder;
+            if (arrayList != null && !arrayList.isEmpty() && imageViewHolder.imageView != null) {
+                Glide.with(context).load(arrayList.get(holder.getAdapterPosition()).getUri()).diskCacheStrategy(DiskCacheStrategy.ALL).placeholder(R.drawable.ic_placeholder).error(R.drawable.ic_placeholder).into((imageViewHolder.imageView));
             }
 
-            if(imageViewHolder.imageView!=null)
-            {
+            if (imageViewHolder.imageView != null) {
                 imageViewHolder.imageView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent intent=new Intent(context,ViewImages.class);
-                        intent.putExtra("seletedfile",(arrayList.get(holder.getAdapterPosition())).getUri().toString());
-                        intent.putExtra("position",holder.getAdapterPosition());
-                        intent.putStringArrayListExtra("arrayofstring",getStringArrayList());
+                        Intent intent = new Intent(context, ViewImages.class);
+                        intent.putExtra("seletedfile", (arrayList.get(holder.getAdapterPosition())).getUri().toString());
+                        intent.putExtra("position", holder.getAdapterPosition());
+                        intent.putStringArrayListExtra("arrayofstring", getStringArrayList());
 
 
                         ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
@@ -85,12 +85,12 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
     }
 
     @Override
-    public  int getItemCount() {
+    public int getItemCount() {
         return arrayList.size();
     }
 
     public class ImageViewHolder extends RecyclerView.ViewHolder {
-        ImageView imageView;
+        private ImageView imageView;
 
         public ImageViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -98,29 +98,13 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
         }
     }
 
-    private Bitmap getVideoThumbnail(String videoPath) throws IOException {
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
-        retriever.setDataSource(videoPath);
-
-        // Get the thumbnail at a specific time (e.g., 1 second into the video)
-        long timeInMicroseconds = 1000000; // 1 second in microseconds
-        Bitmap thumbnail = retriever.getFrameAtTime(timeInMicroseconds);
-
-        retriever.release(); // Release the MediaMetadataRetriever
-
-        return thumbnail;
-    }
 
     public ArrayList<String> getStringArrayList() {
-        ArrayList<String> stringArrayList=new ArrayList<>();
-        for (int i=0;i<arrayList.size();i++)
-        {
+        ArrayList<String> stringArrayList = new ArrayList<>();
+        for (int i = 0; i < arrayList.size(); i++) {
             stringArrayList.add(arrayList.get(i).getUri().toString());
         }
         return stringArrayList;
     }
 
-    public void notifyDataChanges() {
-        notifyDataSetChanged();
-    }
 }

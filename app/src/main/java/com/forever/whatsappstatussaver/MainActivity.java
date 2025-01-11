@@ -62,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         FirebaseApp.initializeApp(this);
         FirebaseCrashlytics.getInstance();
-        btnRefresh = findViewById(R.id.btn_refresh);
 
         MobileAds.initialize(this, new OnInitializationCompleteListener() {
             @Override

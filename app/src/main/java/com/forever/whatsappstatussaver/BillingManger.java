@@ -65,8 +65,9 @@ public class BillingManger implements PurchasesUpdatedListener {
     }
 
     private void acknowledgePurchase(Purchase purchase) {
+        Log.d(TAG, "acknowledgePurchase: ");
         // Check if the purchase has already been acknowledged
-        if (purchase != null && purchase.isAcknowledged()) {
+        if (purchase != null && !purchase.isAcknowledged()) {
             AcknowledgePurchaseParams acknowledgePurchaseParams =
                     AcknowledgePurchaseParams.newBuilder()
                             .setPurchaseToken(purchase.getPurchaseToken())
@@ -97,7 +98,7 @@ public class BillingManger implements PurchasesUpdatedListener {
             /*updateUionPurchase();*/
             for (Purchase purchase : list) {
                 acknowledgePurchase(purchase);
-                SessionManger.setIsPurchaseUser(activity, true);
+                SessionManger.getInstance().setIsPurchaseUser(true);
                 isAutoRenew = purchase.isAutoRenewing();
                 if (billingCallback != null) {
                     billingCallback.onPurchasesUpdated(billingResult, list);
@@ -110,7 +111,7 @@ public class BillingManger implements PurchasesUpdatedListener {
             // User canceled the purchase
         } else {
             Log.d(TAG, "onPurchasesUpdated: other error ");
-            SessionManger.setIsPurchaseUser(activity, false);
+            SessionManger.getInstance().setIsPurchaseUser(false);
             // Handle other errors
         }
 
@@ -134,19 +135,19 @@ public class BillingManger implements PurchasesUpdatedListener {
                                 }
                                 if (isPurchase) {
                                     Log.d(TAG, "onQueryPurchasesResponse: is pro ");
-                                    SessionManger.setIsPurchaseUser(activity, isPurchase);
+                                    SessionManger.getInstance().setIsPurchaseUser(isPurchase);
                                 } else {
                                     Log.d(TAG, "onQueryPurchasesResponse: is free " + isPurchase);
-                                    SessionManger.setIsPurchaseUser(activity, isPurchase);
+                                    SessionManger.getInstance().setIsPurchaseUser(isPurchase);
                                 }
                             }
                         } else {
-                            SessionManger.setIsPurchaseUser(activity, false);
+                            SessionManger.getInstance().setIsPurchaseUser(false);
                             Log.d(TAG, "onQueryPurchasesResponse:  No Active SubScription  ");
                             // No active subscriptions
                         }
                     } else if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.USER_CANCELED) {
-                        SessionManger.setIsPurchaseUser(activity, false);
+                        SessionManger.getInstance().setIsPurchaseUser(false);
                         Log.d(TAG, "onQueryPurchasesResponse: user cancel sub");
                     } else {
                         Log.d(TAG, "onQueryPurchasesResponse: error f");

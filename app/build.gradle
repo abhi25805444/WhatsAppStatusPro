@@ -2,13 +2,23 @@ plugins {
     id 'com.android.application'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.crashlytics'
-
 }
 
 
 android {
     namespace 'com.forever.whatsappstatussaver'
     compileSdk 34
+
+    signingConfigs {
+        config {
+            keyAlias 'key0'
+            keyPassword '@Abhi2580'
+            storeFile file('D:\\jks\\statussvaerkey.jks')
+//            storeFile file('E:\\Akshay\\Live_Project\\Jks\\Logomaker BG\\logo_maker.jks')
+//            storeFile file('E:\\Android_Project\\AppCred\\LogoMakerBG\\logo_maker.jks')
+            storePassword '@Abhi2580'
+        }
+    }
 
     defaultConfig {
         applicationId "com.forever.statussaver"
@@ -20,11 +30,25 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {0
-        release {
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.config
             minifyEnabled false
+            debuggable true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.debug
+            zipAlignEnabled true
+            shrinkResources false
+            externalNativeBuild { ndkBuild { cFlags '-DDEBUG' } }
+            versionNameSuffix ".debug"
+        }
+        release {
+            signingConfig signingConfigs.config
+            debuggable false
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            zipAlignEnabled true
+            shrinkResources true
+            externalNativeBuild { ndkBuild { cFlags '-DRELEASE' } }
         }
     }
     compileOptions {
@@ -44,11 +68,10 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.5.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation "com.airbnb.android:lottie:3.4.0"
     implementation 'com.android.billingclient:billing:6.1.0'
     implementation 'com.google.android.play:app-update:2.1.0'
     implementation 'com.google.firebase:firebase-config:21.1.0'
     implementation 'com.facebook.shimmer:shimmer:0.5.0'
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 }

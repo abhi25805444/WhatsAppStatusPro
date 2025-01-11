@@ -1,19 +1,19 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
+    buildscript {
+        repositories {
+            google()
+            mavenCentral()
+        }
+        ext {
+            agp_version = '8.3.1'
+            agp_version1 = '8.0.2'
+            agp_version2 = '8.1.1'
+        }
+    } // Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+
+    plugins {
+        id 'com.google.firebase.crashlytics' version '2.9.9' apply false
+        id 'com.google.gms.google-services' version '4.4.1' apply false
+        id 'com.android.application' version '8.1.1' apply false
+        id 'com.android.library' version '8.0.2' apply false
     }
-    ext {
-        agp_version = '8.3.1'
-        agp_version1 = '8.0.2'
-    }
-} // Top-level build file where you can add configuration options common to all sub-projects/modules.
-
-
-plugins {
-    id 'com.google.firebase.crashlytics' version '2.9.9' apply false
-
-    id 'com.google.gms.google-services' version '4.4.1' apply false
-    id 'com.android.application' version '8.0.2' apply false
-    id 'com.android.library' version '8.0.2' apply false
-}
