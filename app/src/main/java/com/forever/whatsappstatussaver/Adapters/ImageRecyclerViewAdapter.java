@@ -68,15 +68,15 @@ public class ImageRecyclerViewAdapter extends RecyclerView.Adapter {
                     @Override
                     public void onClick(View v) {
                         Intent intent = new Intent(context, ViewImages.class);
-                        intent.putExtra("seletedfile", (arrayList.get(holder.getAdapterPosition())).getUri().toString());
-                        intent.putExtra("position", holder.getAdapterPosition());
-                        intent.putStringArrayListExtra("arrayofstring", getStringArrayList());
+                        if (holder != null && holder.getAdapterPosition() >= 0 && holder.getAdapterPosition() < arrayList.size()) {
+                            intent.putExtra("seletedfile", (arrayList.get(holder.getAdapterPosition())).getUri().toString());
+                            intent.putExtra("position", holder.getAdapterPosition());
+                            intent.putStringArrayListExtra("arrayofstring", getStringArrayList());
+                            ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                                    (Activity) context, ((ImageViewHolder) holder).imageView, ViewCompat.getTransitionName(((ImageViewHolder) holder).imageView));
 
-
-                        ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                                (Activity) context, ((ImageViewHolder) holder).imageView, ViewCompat.getTransitionName(((ImageViewHolder) holder).imageView));
-
-                        context.startActivity(intent, options.toBundle());
+                            context.startActivity(intent, options.toBundle());
+                        }
                     }
                 });
             }

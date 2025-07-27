@@ -144,7 +144,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void loadAd() {
         // Use the test ad unit ID to load an ad.
-        RewardedInterstitialAd.load(MainActivity.this, "ca-app-pub-3940256099942544/5354046379",
+        RewardedInterstitialAd.load(MainActivity.this, getString(R.string.rewardadunit),
                 new AdRequest.Builder().build(), new RewardedInterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(RewardedInterstitialAd ad) {

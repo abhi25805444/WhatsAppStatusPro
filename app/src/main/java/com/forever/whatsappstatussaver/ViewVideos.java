@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
@@ -161,7 +162,7 @@ public class ViewVideos extends AppCompatActivity {
         linearLayout = findViewById(R.id.adView);
         btnSharall = findViewById(R.id.shareall);
 
-        if(Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()){
+        if (Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
             AdView adView = new AdView(getApplicationContext());
             adView.setAdSize(getAdSize());
             adView.setAdUnitId(getString(R.string.banneradunit));
@@ -212,16 +213,18 @@ public class ViewVideos extends AppCompatActivity {
         gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                float diffX = e2.getX() - e1.getX();
-                float diffY = e2.getY() - e1.getY();
-                if (Math.abs(diffX) > Math.abs(diffY)) {
-                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                        if (diffX > 0) {
-                            onSwipeRight();
-                        } else {
-                            onSwipeLeft();
+                if (e2 != null && e1 != null) {
+                    float diffX = e2.getX() - e1.getX();
+                    float diffY = e2.getY() - e1.getY();
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                onSwipeRight();
+                            } else {
+                                onSwipeLeft();
+                            }
+                            return true;
                         }
-                        return true;
                     }
                 }
                 return false;
@@ -238,7 +241,7 @@ public class ViewVideos extends AppCompatActivity {
                     lastClickTime = currentTime;
                     isComeFromShare = false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
+                    if (Constant.shareCounter >= 3 && Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {
@@ -263,7 +266,6 @@ public class ViewVideos extends AppCompatActivity {
                 }
 
 
-
             }
         });
 
@@ -271,23 +273,36 @@ public class ViewVideos extends AppCompatActivity {
             @Override
             public void onClick(View view) {
 
-                isComeFromShare = true;long currentTime = System.currentTimeMillis();
+                isComeFromShare = true;
+                long currentTime = System.currentTimeMillis();
                 if (currentTime - lastClickTime >= CLICK_DELAY) {
                     lastClickTime = currentTime;
                     isComeFromWahtsappShare = false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
+                    if (Constant.shareCounter >= 3 && Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {
-
-                        Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                        whatsappIntent.setType("video/*");  // Change to video MIME type
-                        Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));  // Assuming videoUri contains your video file path
-                        whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                        whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-                        whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        startActivity(whatsappIntent);
+                        if(isWhatsAppInstalled()){
+                            Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                            whatsappIntent.setType("video/*");  // Change to video MIME type
+                            Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));  // Assuming videoUri contains your video file path
+                            whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                            whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                            whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivity(whatsappIntent);
+                        } else if (isWhatsAppBusinessInstalled()) {
+                            Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                            whatsappIntent.setType("video/*");  // Change to video MIME type
+                            Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));  // Assuming videoUri contains your video file path
+                            whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                            whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                            whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            whatsappIntent.setPackage("com.whatsapp.w4b");
+                            startActivity(whatsappIntent);
+                        } else {
+                            Toast.makeText(ViewVideos.this, "App not installed", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
             }
@@ -302,7 +317,7 @@ public class ViewVideos extends AppCompatActivity {
                     isComeFromShare = true;
                     isComeFromWahtsappShare = true;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
+                    if (Constant.shareCounter >= 3 && Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {
@@ -357,14 +372,26 @@ public class ViewVideos extends AppCompatActivity {
     public void doActionAfterAd() {
         if (isComeFromShare) {
             if (isComeFromWahtsappShare) {
-                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                whatsappIntent.setType("image/*");
-                whatsappIntent.setPackage("com.whatsapp");
-                Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
-                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-                startActivity(whatsappIntent);
-            }else {
+                if(isWhatsAppInstalled()){
+                    Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                    whatsappIntent.setType("image/*");
+                    whatsappIntent.setPackage("com.whatsapp");
+                    Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
+                    whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                    startActivity(whatsappIntent);
+                } else if (isWhatsAppBusinessInstalled()) {
+                    Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                    whatsappIntent.setType("image/*");
+                    whatsappIntent.setPackage("com.whatsapp.w4b");
+                    Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));
+                    whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                    startActivity(whatsappIntent);
+                }else {
+                    Toast.makeText(ViewVideos.this, "App not installed", Toast.LENGTH_SHORT).show();
+                }
+            } else {
                 Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
                 whatsappIntent.setType("video/*");  // Change to video MIME type
                 Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));  // Assuming videoUri contains your video file path
@@ -392,6 +419,33 @@ public class ViewVideos extends AppCompatActivity {
                 e.printStackTrace();
             }
         }
+    }
+
+    public boolean isWhatsAppBusinessInstalled() {
+
+        PackageManager packageManager = getPackageManager();
+        if (packageManager != null) {
+            try {
+                packageManager.getPackageInfo("com.whatsapp.w4b", PackageManager.GET_ACTIVITIES);
+                return true; // WhatsApp Business is installed
+            } catch (PackageManager.NameNotFoundException e) {
+                return false; // WhatsApp Business is not installed
+            }
+        }
+        return false;
+    }
+
+    public boolean isWhatsAppInstalled() {
+        PackageManager packageManager = getPackageManager();
+        if (packageManager != null) {
+            try {
+                packageManager.getPackageInfo("com.whatsapp", PackageManager.GET_ACTIVITIES);
+                return true; // WhatsApp Business is installed
+            } catch (PackageManager.NameNotFoundException e) {
+                return false; // WhatsApp Business is not installed
+            }
+        }
+        return false;
     }
 
 

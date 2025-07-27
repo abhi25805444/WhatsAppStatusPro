@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.media.MediaScannerConnection;
@@ -58,7 +59,7 @@ import java.util.Random;
 public class ViewImages extends AppCompatActivity {
     ImageView imageView;
     FloatingActionButton btnDownload;
-    FloatingActionButton btnWhatsappShare,btnShareAll;
+    FloatingActionButton btnWhatsappShare, btnShareAll;
 
     File file1;
     int position;
@@ -89,7 +90,7 @@ public class ViewImages extends AppCompatActivity {
 
     public void loadAd() {
         // Use the test ad unit ID to load an ad.
-        if(Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()){
+        if (Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
             RewardedInterstitialAd.load(ViewImages.this, getString(R.string.rewardadunit),
                     new AdRequest.Builder().build(), new RewardedInterstitialAdLoadCallback() {
 
@@ -132,16 +133,30 @@ public class ViewImages extends AppCompatActivity {
 
     public void doActionAfterAd() {
         if (isComeFromShare) {
-            if(isComeFromWahtsappShare){
-                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                whatsappIntent.setType("image/*");
-                whatsappIntent.setPackage("com.whatsapp");
-                Uri uri = Uri.parse(imgUri[0]);
-                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                startActivity(whatsappIntent);
-            }else {
+            if (isComeFromWahtsappShare) {
+                if (isWhatsAppInstalled()) {
+                    Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                    whatsappIntent.setType("image/*");
+                    whatsappIntent.setPackage("com.whatsapp");
+                    Uri uri = Uri.parse(imgUri[0]);
+                    whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                    whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(whatsappIntent);
+                } else if (isWhatsAppBusinessInstalled()) {
+                    Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                    whatsappIntent.setType("image/*");
+                    whatsappIntent.setPackage("com.whatsapp.w4b");
+                    Uri uri = Uri.parse(imgUri[0]);
+                    whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                    whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                    whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(whatsappIntent);
+                } else {
+                    Toast.makeText(ViewImages.this, "App is not installed", Toast.LENGTH_SHORT).show();
+                }
+
+            } else {
                 Intent shareIntent = new Intent(Intent.ACTION_SEND);
                 shareIntent.setType("image/*");
                 Uri uri = Uri.parse(imgUri[0]);
@@ -172,15 +187,42 @@ public class ViewImages extends AppCompatActivity {
         }
     }
 
+    public boolean isWhatsAppBusinessInstalled() {
+
+        PackageManager packageManager = getPackageManager();
+        if (packageManager != null) {
+            try {
+                packageManager.getPackageInfo("com.whatsapp.w4b", PackageManager.GET_ACTIVITIES);
+                return true; // WhatsApp Business is installed
+            } catch (PackageManager.NameNotFoundException e) {
+                return false; // WhatsApp Business is not installed
+            }
+        }
+        return false;
+    }
+
+    public boolean isWhatsAppInstalled() {
+        PackageManager packageManager = getPackageManager();
+        if (packageManager != null) {
+            try {
+                packageManager.getPackageInfo("com.whatsapp", PackageManager.GET_ACTIVITIES);
+                return true; // WhatsApp Business is installed
+            } catch (PackageManager.NameNotFoundException e) {
+                return false; // WhatsApp Business is not installed
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_images);
 
         linearLayout = findViewById(R.id.adView);
-        btnShareAll=findViewById(R.id.btnShareAll);
+        btnShareAll = findViewById(R.id.btnShareAll);
 
-        if(Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()){
+        if (Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
             AdView adView = new AdView(getApplicationContext());
             adView.setAdSize(getAdSize());
             adView.setAdUnitId(getString(R.string.banneradunit));
@@ -189,7 +231,6 @@ public class ViewImages extends AppCompatActivity {
             AdRequest adRequest = new AdRequest.Builder().build();
             adView.loadAd(adRequest);
         }
-
 
 
         if (Build.VERSION.SDK_INT >= 24) {
@@ -237,18 +278,21 @@ public class ViewImages extends AppCompatActivity {
         gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-                float diffX = e2.getX() - e1.getX();
-                float diffY = e2.getY() - e1.getY();
-                if (Math.abs(diffX) > Math.abs(diffY)) {
-                    if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                        if (diffX > 0) {
-                            onSwipeRight();
-                        } else {
-                            onSwipeLeft();
+                if (e2 != null && e1 != null) {
+                    float diffX = e2.getX() - e1.getX();
+                    float diffY = e2.getY() - e1.getY();
+                    if (Math.abs(diffX) > Math.abs(diffY)) {
+                        if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                            if (diffX > 0) {
+                                onSwipeRight();
+                            } else {
+                                onSwipeLeft();
+                            }
+                            return true;
                         }
-                        return true;
                     }
                 }
+
                 return false;
             }
         });
@@ -262,7 +306,7 @@ public class ViewImages extends AppCompatActivity {
                     lastClickTime = currentTime;
                     isComeFromShare = false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
+                    if (Constant.shareCounter >= 3 && Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {
@@ -300,18 +344,31 @@ public class ViewImages extends AppCompatActivity {
                         lastClickTime = currentTime;
                         isComeFromWahtsappShare = true;
                         Constant.shareCounter++;
-                        if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
+                        if (Constant.shareCounter >= 3 && Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
                             Constant.shareCounter = 0;
                             loadAd();
                         } else {
-                            Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
-                            whatsappIntent.setType("image/*");
-                            whatsappIntent.setPackage("com.whatsapp");
-                            Uri uri = Uri.parse(imgUri[0]);
-                            whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
-                            whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
-                            whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            startActivity(whatsappIntent);
+                            if (isWhatsAppInstalled()) {
+                                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                                whatsappIntent.setType("image/*");
+                                whatsappIntent.setPackage("com.whatsapp");
+                                Uri uri = Uri.parse(imgUri[0]);
+                                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(whatsappIntent);
+                            } else if (isWhatsAppBusinessInstalled()) {
+                                Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
+                                whatsappIntent.setType("image/*");
+                                whatsappIntent.setPackage("com.whatsapp.w4b");
+                                Uri uri = Uri.parse(imgUri[0]);
+                                whatsappIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                                whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
+                                whatsappIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                startActivity(whatsappIntent);
+                            } else {
+                                Toast.makeText(ViewImages.this, "App is not installed", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     }
 
@@ -327,9 +384,9 @@ public class ViewImages extends AppCompatActivity {
                 if (currentTime - lastClickTime >= CLICK_DELAY) {
                     lastClickTime = currentTime;
                     isComeFromShare = true;
-                    isComeFromWahtsappShare=false;
+                    isComeFromWahtsappShare = false;
                     Constant.shareCounter++;
-                    if (Constant.shareCounter >= 3&&Constant.is_ad_enable&&!SessionManger.getInstance().getIsPurchaseUser()) {
+                    if (Constant.shareCounter >= 3 && Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
                         Constant.shareCounter = 0;
                         loadAd();
                     } else {

@@ -54,15 +54,17 @@ public class VideoRecylerviewAdapter extends RecyclerView.Adapter{
         ((videoViewHolder) holder).imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent=new Intent(context, ViewVideos.class);
-                intent.putExtra("seletedfile",(fileArrayList.get(holder.getAdapterPosition())).getUri().toString());
-                intent.putStringArrayListExtra("arraylistofvideos",getStringArrayList());
-                intent.putExtra("postionofvideo",holder.getAdapterPosition());
+                if(holder!=null && holder.getAdapterPosition()>=0 && holder.getAdapterPosition()<fileArrayList.size()){
+                    Intent intent=new Intent(context, ViewVideos.class);
+                    intent.putExtra("seletedfile",(fileArrayList.get(holder.getAdapterPosition())).getUri().toString());
+                    intent.putStringArrayListExtra("arraylistofvideos",getStringArrayList());
+                    intent.putExtra("postionofvideo",holder.getAdapterPosition());
 
-                ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                        (Activity) context,((videoViewHolder) holder).imageView, ViewCompat.getTransitionName(((videoViewHolder) holder).imageView));
+                    ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                            (Activity) context,((videoViewHolder) holder).imageView, ViewCompat.getTransitionName(((videoViewHolder) holder).imageView));
 
-                context.startActivity(intent, options.toBundle());
+                    context.startActivity(intent, options.toBundle());
+                }
             }
         });
 
