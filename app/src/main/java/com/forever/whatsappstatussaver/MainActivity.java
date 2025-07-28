@@ -2,10 +2,17 @@ package com.forever.whatsappstatussaver;
 
 import static android.service.controls.ControlsProviderService.TAG;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.OnApplyWindowInsetsListener;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -16,6 +23,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
+import android.view.View;
+
 import com.forever.whatsappstatussaver.Fragment.PermisionFragment;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.LoadAdError;
@@ -60,6 +69,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Enable edge-to-edge with null check
+        try {
+            EdgeToEdge.enable(this);
+        } catch (Exception e) {
+            Log.e(TAG, "Error enabling edge-to-edge", e);
+        }
+
         FirebaseApp.initializeApp(this);
         FirebaseCrashlytics.getInstance();
 

@@ -24,6 +24,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -88,15 +90,81 @@ public class PermisionFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        context = getActivity().getApplicationContext();
-        View root = inflater.inflate(R.layout.fragment_permision, container, false);
-        this.textView2 = root.findViewById(R.id.txt2);
+        Activity activity = getActivity();
+        context = activity != null ? activity.getApplicationContext() : null;
+        View root = inflater != null ? inflater.inflate(R.layout.fragment_permision, container, false) : null;
 
+        if (root != null) {
+            this.textView2 = root.findViewById(R.id.txt2);
+
+            // Handle window insets for edge-to-edge experience
+            ViewCompat.setOnApplyWindowInsetsListener(root, (v, insets) -> {
+                if (v == null || insets == null) {
+                    return insets != null ? insets : WindowInsetsCompat.CONSUMED;
+                }
+                
+                androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                androidx.core.graphics.Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+                if (systemBars != null && ime != null) {
+                    // Apply insets as padding to maintain component visibility and interactability
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right,
+                        Math.max(systemBars.bottom, ime.bottom));
+                }
+
+                return WindowInsetsCompat.CONSUMED;
+            });
+
+            btnPermision = root.findViewById(R.id.btnpermision);
+            if (btnPermision != null && activity != null && !activity.isFinishing()) {
+                btnPermision.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
+
+                            Log.d(TAG, "onClick: isWhatsAppBusinessInstalled "+isWhatsAppBusinessInstalled()+" isWhatsAppInstalled "+isWhatsAppInstalled());
+                            if (isWhatsAppInstalled()) {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    requestPermissionQ();
+                                }
+                                requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
+                            } else if (isWhatsAppBusinessInstalled()) {
+                                SessionManger.getInstance().setKeySelectionType(1);
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                                    requestPermissionQ();
+                                }
+                                requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
+                            } else {
+                                Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
+                            }
+                            // If Android 10+
+
+                        } else {
+                            if (isWhatsAppInstalled()) {
+                                showHomeFrag();
+                            } else if (isWhatsAppBusinessInstalled()) {
+                                SessionManger.getInstance().setKeySelectionType(1);
+                                showHomeFrag();
+                            } else {
+                                Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+
+
+                    }
+                });
+            }
+        }
+
+        // Null-safe permission and app installation checks
         if (arePermissionDenied()) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
+                // Keep existing logic
             } else {
-                textView2.setText("2. Click on Allow >");
+                if (textView2 != null) {
+                    textView2.setText("2. Click on Allow >");
+                }
             }
         } else {
             if (isWhatsAppInstalled()) {
@@ -105,50 +173,11 @@ public class PermisionFragment extends Fragment {
                 SessionManger.getInstance().setKeySelectionType(1);
                 showHomeFrag();
             } else {
-                Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
-            }
-
-        }
-
-        btnPermision = root.findViewById(R.id.btnpermision);
-        btnPermision.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && arePermissionDenied()) {
-
-                    Log.d(TAG, "onClick: isWhatsAppBusinessInstalled "+isWhatsAppBusinessInstalled()+" isWhatsAppInstalled "+isWhatsAppInstalled());
-                    if (isWhatsAppInstalled()) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            requestPermissionQ();
-                        }
-                        requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
-                    } else if (isWhatsAppBusinessInstalled()) {
-                        SessionManger.getInstance().setKeySelectionType(1);
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                            requestPermissionQ();
-                        }
-                        requestPermissions(PERMISSIONS, REQUEST_PERMISSIONS);
-                    } else {
-                        Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
-                    }
-                    // If Android 10+
-
-                } else {
-                    if (isWhatsAppInstalled()) {
-                        showHomeFrag();
-                    } else if (isWhatsAppBusinessInstalled()) {
-                        SessionManger.getInstance().setKeySelectionType(1);
-                        showHomeFrag();
-                    } else {
-                        Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
-                    }
-
+                if (context != null) {
+                    Toast.makeText(context, "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
                 }
-
-
             }
-        });
+        }
 
         return root;
     }

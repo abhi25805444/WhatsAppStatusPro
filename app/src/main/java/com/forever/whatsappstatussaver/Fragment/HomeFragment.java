@@ -1,6 +1,7 @@
 package com.forever.whatsappstatussaver.Fragment;
 
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -11,6 +12,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.cardview.widget.CardView;
+import androidx.core.view.WindowCompat;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager.widget.ViewPager;
 
@@ -80,6 +82,12 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
 
     private long lastClickTime = 0; // Variable to track last click time
     private static final long CLICK_DELAY = 1000; // 1 second delay
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Activity activity = getActivity();
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -153,20 +161,53 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Handle window insets for edge-to-edge experience
+        if (view != null && getActivity() != null && !getActivity().isFinishing()) {
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(view, (v, insets) -> {
+                if (v == null || insets == null) {
+                    return insets != null ? insets : androidx.core.view.WindowInsetsCompat.CONSUMED;
+                }
+                
+                androidx.core.graphics.Insets systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+                androidx.core.graphics.Insets ime = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.ime());
 
-        BillingManger.getInstance().setBillingLisner(this);
+                if (systemBars != null && ime != null) {
+                    // Apply top inset to the coordinator layout to push content below status bar
+                    androidx.coordinatorlayout.widget.CoordinatorLayout coordinatorLayout = view.findViewById(R.id.coordinatorLayout);
+                    if (coordinatorLayout != null) {
+                        androidx.core.view.ViewCompat.setPaddingRelative(coordinatorLayout,
+                            systemBars.left, systemBars.top, systemBars.right, 0);
+                    }
 
-        if (btnNoAds != null) {
+                    // Apply bottom inset to viewpager to avoid navigation bar overlap
+                    if (viewPager != null) {
+                        int bottomPadding = Math.max(systemBars.bottom, ime.bottom);
+                        androidx.core.view.ViewCompat.setPaddingRelative(viewPager,
+                            0, 0, 0, bottomPadding);
+                    }
+                }
+
+                return androidx.core.view.WindowInsetsCompat.CONSUMED;
+            });
+        }
+
+        if (BillingManger.getInstance() != null) {
+            BillingManger.getInstance().setBillingLisner(this);
+        }
+
+        if (btnNoAds != null && getActivity() != null && !getActivity().isFinishing()) {
             btnNoAds.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    BillingManger.getInstance().queryPurchases();
+                    if (BillingManger.getInstance() != null) {
+                        BillingManger.getInstance().queryPurchases();
+                    }
                     openRemoveAdDailog();
                 }
             });
         }
 
-        if (btnFilter != null) {
+        if (btnFilter != null && getActivity() != null && !getActivity().isFinishing()) {
             btnFilter.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -175,11 +216,15 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
             });
         }
 
-        viewpagerAdapter = new ViewpagerAdapter(getActivity().getSupportFragmentManager());
-        if (viewpagerAdapter != null) {
-            viewPager.setAdapter(viewpagerAdapter);
+        if (getActivity() != null && !getActivity().isFinishing()) {
+            viewpagerAdapter = new ViewpagerAdapter(getActivity().getSupportFragmentManager());
+            if (viewpagerAdapter != null && viewPager != null) {
+                viewPager.setAdapter(viewpagerAdapter);
+            }
+            if (tabLayout != null && viewPager != null) {
+                tabLayout.setupWithViewPager(viewPager);
+            }
         }
-        tabLayout.setupWithViewPager(viewPager);
 
         String[] options = {"WHATSAPP", "WHATSAPP BUSINESS"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(getActivity(), R.layout.spinner_item_layout, options);
@@ -248,7 +293,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
                         if (radioGroup.getCheckedRadioButtonId() == radioWP.getId()) {
                             Log.d(TAG, "onClick: ********* 1 " + SessionManger.getInstance().getSelectionType());
                             if (SessionManger.getInstance().getSelectionType() != WHATSAPP) {
-                                if(!isWhatsAppInstalled()){
+                                if (!isWhatsAppInstalled()) {
                                     Toast.makeText(getActivity(), "Please Install WhatsApp", Toast.LENGTH_SHORT).show();
                                     if (dialog != null && dialog.isShowing()) {
                                         dialog.dismiss();
@@ -267,7 +312,7 @@ public class HomeFragment extends Fragment implements BillingManger.BillingCallb
                         } else {
                             Log.d(TAG, "onClick: ********* 3 " + WHATSAPPBUSINES);
                             if (SessionManger.getInstance().getSelectionType() != WHATSAPPBUSINES) {
-                                if(!isWhatsAppBusinessInstalled()){
+                                if (!isWhatsAppBusinessInstalled()) {
                                     Toast.makeText(getActivity(), "Please Install WhatsApp Business", Toast.LENGTH_SHORT).show();
                                     if (dialog != null && dialog.isShowing()) {
                                         dialog.dismiss();

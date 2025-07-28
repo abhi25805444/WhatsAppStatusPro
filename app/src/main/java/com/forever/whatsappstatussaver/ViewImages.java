@@ -2,9 +2,12 @@ package com.forever.whatsappstatussaver;
 
 import static android.content.ContentValues.TAG;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -218,6 +221,32 @@ public class ViewImages extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_images);
+
+        // Enable edge-to-edge with null check
+        if (this != null) {
+            EdgeToEdge.enable(this);
+        }
+
+        // Handle window insets for edge-to-edge experience
+        View contentView = findViewById(android.R.id.content);
+        if (contentView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(contentView, (v, insets) -> {
+                if (v == null || insets == null) {
+                    return insets != null ? insets : WindowInsetsCompat.CONSUMED;
+                }
+                
+                androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                androidx.core.graphics.Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+                if (systemBars != null && ime != null) {
+                    // Apply insets as padding to maintain component visibility and interactability
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right,
+                        Math.max(systemBars.bottom, ime.bottom));
+                }
+
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
 
         linearLayout = findViewById(R.id.adView);
         btnShareAll = findViewById(R.id.btnShareAll);

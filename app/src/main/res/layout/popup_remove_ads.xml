@@ -66,7 +66,7 @@
             android:layout_marginRight="10dp"
             android:layout_marginBottom="10dp"
             android:background="@drawable/bg_white_rounded_corner"
-            android:backgroundTint="@color/blue">
+            android:backgroundTint="@color/appColor">
 
             <TextView
                 android:id="@+id/txtRemoveAd"

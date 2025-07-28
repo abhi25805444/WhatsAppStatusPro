@@ -3,6 +3,6 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="BG">#BCBCBC</color>
-    <color name="blue">#20C062</color>
+    <color name="appColor">#20C062</color>
     <color name="bg">#B9FFFFFF</color>
 </resources>

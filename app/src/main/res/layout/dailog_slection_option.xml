@@ -38,7 +38,7 @@
                 android:checked="true"
                 android:textColor="@color/white"
                 android:textSize="18sp"
-                app:buttonTint="@color/blue" />
+                app:buttonTint="@color/appColor" />
 
             <RadioButton
                 android:id="@+id/radioWpBusiness"
@@ -49,7 +49,7 @@
                 android:text="Whatsapp Business "
                 android:textColor="@color/white"
                 android:textSize="18sp"
-                app:buttonTint="@color/blue" />
+                app:buttonTint="@color/appColor" />
 
         </RadioGroup>
 
@@ -62,7 +62,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="20dp"
-        app:cardBackgroundColor="@color/blue"
+        app:cardBackgroundColor="@color/appColor"
         app:cardCornerRadius="20dp">
 
         <TextView

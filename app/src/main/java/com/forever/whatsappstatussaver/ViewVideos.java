@@ -1,8 +1,11 @@
 package com.forever.whatsappstatussaver;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -159,17 +162,46 @@ public class ViewVideos extends AppCompatActivity {
         }
         setContentView(R.layout.activity_view_videos);
 
+        // Enable edge-to-edge
+        EdgeToEdge.enable(this);
+
+        // Handle window insets for edge-to-edge experience
+        View contentView = findViewById(android.R.id.content);
+        if (contentView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(contentView, (v, insets) -> {
+                if (v == null || insets == null) {
+                    return insets != null ? insets : WindowInsetsCompat.CONSUMED;
+                }
+                
+                androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                androidx.core.graphics.Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+                if (systemBars != null && ime != null) {
+                    // Apply insets as padding to maintain component visibility and interactability
+                    v.setPadding(systemBars.left, systemBars.top, systemBars.right,
+                        Math.max(systemBars.bottom, ime.bottom));
+                }
+
+                return WindowInsetsCompat.CONSUMED;
+            });
+        }
+
         linearLayout = findViewById(R.id.adView);
         btnSharall = findViewById(R.id.shareall);
 
-        if (Constant.is_ad_enable && !SessionManger.getInstance().getIsPurchaseUser()) {
+        // Null-safe ad initialization
+        if (Constant.is_ad_enable && SessionManger.getInstance() != null && !SessionManger.getInstance().getIsPurchaseUser() && linearLayout != null) {
             AdView adView = new AdView(getApplicationContext());
-            adView.setAdSize(getAdSize());
-            adView.setAdUnitId(getString(R.string.banneradunit));
-            linearLayout.removeAllViews();
-            linearLayout.addView(adView);
-            AdRequest adRequest = new AdRequest.Builder().build();
-            adView.loadAd(adRequest);
+            if (adView != null) {
+                adView.setAdSize(getAdSize());
+                adView.setAdUnitId(getString(R.string.banneradunit));
+                linearLayout.removeAllViews();
+                linearLayout.addView(adView);
+                AdRequest adRequest = new AdRequest.Builder().build();
+                if (adRequest != null) {
+                    adView.loadAd(adRequest);
+                }
+            }
         }
 
 
@@ -177,30 +209,50 @@ public class ViewVideos extends AppCompatActivity {
         btnDownload = findViewById(R.id.btn_download);
         btnWhatsappShare = findViewById(R.id.btn_share);
 
-        Drawable icon = btnWhatsappShare.getDrawable();
-        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
-        btnWhatsappShare.setImageDrawable(icon);
-        icon = btnDownload.getDrawable();
-        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+        // Null-safe drawable operations
+        if (btnWhatsappShare != null) {
+            Drawable icon = btnWhatsappShare.getDrawable();
+            if (icon != null) {
+                icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+                btnWhatsappShare.setImageDrawable(icon);
+            }
+        }
 
-        icon = btnSharall.getDrawable();
-        icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
-        btnSharall.setImageDrawable(icon);
+        if (btnDownload != null) {
+            Drawable icon = btnDownload.getDrawable();
+            if (icon != null) {
+                icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+                btnDownload.setImageDrawable(icon);
+            }
+        }
 
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        videoFileName = "Video_" + timeStamp + "_" + new Random().nextInt(1000) + ".mp4";
+        if (btnSharall != null) {
+            Drawable icon = btnSharall.getDrawable();
+            if (icon != null) {
+                icon.setColorFilter(ContextCompat.getColor(this, R.color.white), PorterDuff.Mode.SRC_IN);
+                btnSharall.setImageDrawable(icon);
+            }
+        }
+
         Intent intent = getIntent();
-        imgUri = intent.getStringExtra("seletedfile");
-        position = intent.getIntExtra("postionofvideo", 0);
-        stringArrayList = intent.getStringArrayListExtra("arraylistofvideos");
+        if (intent != null) {
+            imgUri = intent.getStringExtra("seletedfile");
+            position = intent.getIntExtra("postionofvideo", 0);
+            stringArrayList = intent.getStringArrayListExtra("arraylistofvideos");
+        }
+
         picturesDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
-        file = new File[]{new File(imgUri)};
+        if (imgUri != null) {
+            file = new File[]{new File(imgUri)};
+            if (videoView != null) {
+                videoView.setVideoURI(Uri.parse(imgUri));
+                MediaController mediaController = new MediaController(this);
+                if (mediaController != null) {
+                    videoView.setMediaController(mediaController);
+                }
+            }
+        }
 
-
-        videoView.setVideoURI(Uri.parse(imgUri));
-
-        MediaController mediaController = new MediaController(this);
-        videoView.setMediaController(mediaController);
         videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
