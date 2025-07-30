@@ -87,6 +87,7 @@ public class ViewVideos extends AppCompatActivity {
         super.onBackPressed();
     }
 
+    private static final String TAG = "ViewVideos";
     RewardedInterstitialAd rewardedInterstitialAd;
 
     public void loadAd() {
@@ -234,6 +235,8 @@ public class ViewVideos extends AppCompatActivity {
             }
         }
 
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        videoFileName = "Video_" + timeStamp + "_" + new Random().nextInt(1000) + ".mp4";
         Intent intent = getIntent();
         if (intent != null) {
             imgUri = intent.getStringExtra("seletedfile");
@@ -422,8 +425,11 @@ public class ViewVideos extends AppCompatActivity {
     }
 
     public void doActionAfterAd() {
+        Log.i(TAG, "doActionAfterAd: ");
         if (isComeFromShare) {
+            Log.i(TAG, "doActionAfterAd: 1");
             if (isComeFromWahtsappShare) {
+                Log.i(TAG, "doActionAfterAd: 2");
                 if(isWhatsAppInstalled()){
                     Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
                     whatsappIntent.setType("image/*");
@@ -433,6 +439,7 @@ public class ViewVideos extends AppCompatActivity {
                     whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
                     startActivity(whatsappIntent);
                 } else if (isWhatsAppBusinessInstalled()) {
+                    Log.i(TAG, "doActionAfterAd: 3");
                     Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
                     whatsappIntent.setType("image/*");
                     whatsappIntent.setPackage("com.whatsapp.w4b");
@@ -441,9 +448,11 @@ public class ViewVideos extends AppCompatActivity {
                     whatsappIntent.putExtra(Intent.EXTRA_TEXT, "");
                     startActivity(whatsappIntent);
                 }else {
+                    Log.i(TAG, "doActionAfterAd: 4");
                     Toast.makeText(ViewVideos.this, "App not installed", Toast.LENGTH_SHORT).show();
                 }
             } else {
+                Log.i(TAG, "doActionAfterAd: 5");
                 Intent whatsappIntent = new Intent(Intent.ACTION_SEND);
                 whatsappIntent.setType("video/*");  // Change to video MIME type
                 Uri uri = Uri.parse(String.valueOf(Uri.parse(imgUri)));  // Assuming videoUri contains your video file path
@@ -453,6 +462,8 @@ public class ViewVideos extends AppCompatActivity {
                 startActivity(whatsappIntent);
             }
         } else {
+            Log.i(TAG, "doActionAfterAd: 6 "+picturesDirectory);
+            Log.i(TAG, "doActionAfterAd: 6 videoFileName "+videoFileName);
             File destinationFile = new File(picturesDirectory, videoFileName);
             try {
                 Uri uri = Uri.parse(stringArrayList.get(position).toString());
